@@ -1,0 +1,27 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+.env.local
+
+# Data — large files and raw PDFs kept out of git
+data/raw/pdfs/**/*.pdf
+data/processed/*.parquet
+data/db/*.duckdb
+data/processed/ingest_log.json
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Tests
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Dash / Plotly cache
+.dash_cache/
