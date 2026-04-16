@@ -168,6 +168,26 @@ MATURITY_BUCKET_SOURCES: dict[str, str] = {
 }
 
 
+# Creditor-ranking (TLAC3 / TLAC3b) labels for the creditor-rank page.
+CREDITOR_SCOPE_LABELS: dict[str, str] = {
+    "resolution":     "Resolution entity (K_97.00 — TLAC3)",
+    "non_resolution": "Non-resolution subsidiary (K_98.00 — TLAC3b)",
+}
+
+CREDITOR_SCOPE_DESCRIPTION: dict[str, str] = {
+    "resolution": (
+        "MREL-eligible stack of the resolution entity broken down by "
+        "insolvency rank (K_97.00 row 0050 col c0010). Lower rank numbers "
+        "sit higher in the creditor hierarchy (more senior)."
+    ),
+    "non_resolution": (
+        "MREL-eligible stack of material non-resolution subsidiaries broken "
+        "down by insolvency rank (K_98.00 row 0020 col c0010). Only banks "
+        "that report as non-resolution entities appear here."
+    ),
+}
+
+
 def get_caption(key: str) -> MetricCaption:
     """Fetch a metric caption by key — raises KeyError if absent.
 

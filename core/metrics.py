@@ -6,6 +6,8 @@ Callers combine columns for the various pages.
 """
 from __future__ import annotations
 
+import re
+
 import pandas as pd
 
 from core.captions import METRIC_CAPTIONS
@@ -176,3 +178,52 @@ def tlac3_maturity(facts: pd.DataFrame) -> pd.DataFrame:
     # Short-maturity index (< 2y share) — default sort on the page.
     out["under_2y_share"] = out["maturity_1_to_2y_share"]
     return out.sort_values(["entity_lei", "reference_date"]).reset_index(drop=True)
+
+
+# ---- Creditor ranking (TLAC3 / TLAC3b) ----
+
+# Per-scope mapping: (template, eligible-row, col). Column 0010 holds the
+# per-rank amount; the open_key field tags the insolvency rank.
+CREDITOR_RANK_SOURCES: dict[str, tuple[str, str, str]] = {
+    "resolution":     (Template.TLAC3.value,  "0050", "0010"),
+    "non_resolution": (Template.TLAC3B.value, "0020", "0010"),
+}
+
+_RANK_PATTERN = re.compile(r"Rank\s+(\d+)", re.IGNORECASE)
+
+
+def creditor_rank_breakdown(
+    facts: pd.DataFrame, *, scope: str = "resolution"
+) -> pd.DataFrame:
+    """Long-format MREL-eligible amount per (bank, ref-date, insolvency rank).
+
+    ``scope='resolution'`` uses TLAC3 (K_97.00 row 0050); ``'non_resolution'``
+    uses TLAC3b (K_98.00 row 0020). Rows with zero amount are kept so the
+    caller can decide whether to drop them before stacking.
+    """
+    if scope not in CREDITOR_RANK_SOURCES:
+        raise ValueError(f"Unknown creditor-rank scope: {scope!r}")
+    tpl, row, col = CREDITOR_RANK_SOURCES[scope]
+
+    if facts.empty:
+        return pd.DataFrame(columns=["entity_lei", "reference_date",
+                                     "rank", "value"])
+
+    mask = (
+        (facts["template"] == tpl)
+        & (facts["row_code"] == row)
+        & (facts["col_code"] == col)
+        & facts["open_key"].fillna("").str.contains("Rank", case=False, na=False)
+    )
+    sub = facts.loc[mask, ["entity_lei", "reference_date", "open_key", "value"]].copy()
+    if sub.empty:
+        return pd.DataFrame(columns=["entity_lei", "reference_date",
+                                     "rank", "value"])
+
+    sub["rank"] = (
+        sub["open_key"].str.extract(_RANK_PATTERN, expand=False).astype("Int64")
+    )
+    sub = sub.dropna(subset=["rank"])
+    sub["rank"] = sub["rank"].astype(int)
+    out = sub[["entity_lei", "reference_date", "rank", "value"]]
+    return out.sort_values(["entity_lei", "reference_date", "rank"]).reset_index(drop=True)
