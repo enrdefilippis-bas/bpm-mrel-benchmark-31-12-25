@@ -1,0 +1,34 @@
+{
+  "entity_name": "Crédit Agricole S.A.",
+  "source_pdf": "TBD — drop the latest Pillar 3 PDF in data/raw/pdfs/credit_agricole/",
+  "notes": "Ratios as decimals (0.3402 = 34.02%). Amounts in EUR (not millions). Set cells to null when not yet filled in.",
+  "reference_dates": {
+    "2025-12-31": {
+      "km2": {
+        "mrel_total_amount":            null,
+        "trea":                         null,
+        "tem":                          null,
+        "mrel_pct_trea":                null,
+        "subord_pct_trea":              null,
+        "mrel_pct_tem":                 null,
+        "subord_pct_tem":               null,
+        "mrel_requirement_trea":        null,
+        "mrel_subord_requirement_trea": null,
+        "mrel_requirement_tem":         null,
+        "mrel_subord_requirement_tem":  null
+      },
+      "tlac1": {
+        "cet1":                  null,
+        "at1":                   null,
+        "tier2":                 null,
+        "subord_own_issuance":   null,
+        "subord_intra_group":    null,
+        "subord_grandfathered":  null,
+        "subord_t2_residual":    null,
+        "senior_pre_cap":        null,
+        "senior_grandfathered":  null,
+        "senior_post_cap":       null
+      }
+    }
+  }
+}

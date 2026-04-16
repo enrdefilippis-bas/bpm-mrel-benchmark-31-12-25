@@ -15,9 +15,11 @@ from core.peers import BPM_LEI, DEFAULT_BPM_PEERS, resolve_peer_set
 from core.schema import validate_facts
 from ingestion.bank_dimension import build_bank_dimension
 from ingestion.eba_export import parse_eba_export
+from ingestion.normalize import load_missing_bank_facts, merge_sources
 
 
 DEFAULT_EXPORT = ROOT / "data" / "raw" / "p3mreldata_2025q4.xlsx"
+DEFAULT_ENTRIES = ROOT / "data" / "manual_entries"
 PROCESSED = ROOT / "data" / "processed"
 
 
@@ -30,6 +32,12 @@ def main() -> int:
         help="Path to the EBA Pillar 3 MREL/TLAC cell-level export (xlsx).",
     )
     parser.add_argument(
+        "--manual-entries",
+        type=Path,
+        default=DEFAULT_ENTRIES,
+        help="Directory of per-bank manual-entry JSONs (for banks missing from the EBA export).",
+    )
+    parser.add_argument(
         "--out-dir",
         type=Path,
         default=PROCESSED,
@@ -39,8 +47,11 @@ def main() -> int:
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
 
-    facts = parse_eba_export(args.eba_export)
-    validate_facts(facts)
+    eba_facts = parse_eba_export(args.eba_export)
+    validate_facts(eba_facts)
+
+    missing_facts, missing_counts = load_missing_bank_facts(args.manual_entries)
+    facts = merge_sources(eba_facts, missing_facts)
     facts_path = args.out_dir / "facts.parquet"
     facts.to_parquet(facts_path, index=False)
 
@@ -59,6 +70,7 @@ def main() -> int:
         "facts_rows": int(len(facts)),
         "banks": int(len(banks)),
         "sources": present_by_source,
+        "manual_entry_counts": missing_counts,
         "reference_dates": ref_dates,
         "bpm_present": bool(has_bpm),
         "bpm_peer_set_resolved": bpm_peer_leis,
