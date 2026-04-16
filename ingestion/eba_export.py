@@ -36,14 +36,40 @@ def _read_reference_dates(path: Path) -> list[pd.Timestamp]:
     return [pd.Timestamp(d) for d in dates]
 
 
-def _infer_unit(row_name: str, col_name: str) -> str:
+# KM2 (K_90.01) rows that are always ratios — "of which" sub-rows inherit
+# the unit of the parent ratio row even though their text doesn't mention
+# "percentage". Hard-coding these prevents misclassification of cells like
+# row 0050 ("of which own funds and subordinated liabilities") which reads
+# like an amount row but is actually a ratio.
+KM2_RATIO_ROWS: frozenset[str] = frozenset({
+    "0040",  # 3. Own funds and eligible liabilities as % of TREA
+    "0050",  # EU-3a. Of which own funds and subordinated liabilities
+    "0070",  # 5. Own funds and eligible liabilities as % of TEM
+    "0080",  # EU-5a. Of which own funds and subordinated liabilities
+    "0090",  # 6. Does the resolution entity subordinate …? (flag, but ratio-like)
+    "0100",  # 7. ...
+    "0120",  # 9. MREL requirement as % of TREA
+    "0130",  # 10. Of which to be met with subordinated instruments (% TREA)
+    "0140",  # 11. MREL requirement as % of TEM
+    "0150",  # 12. Of which to be met with subordinated instruments (% TEM)
+    "0160",  # 13. Combined buffer requirement
+    "0170",  # 14. Of which …
+    "0180",  # 15. ...
+})
+
+
+def _infer_unit(row_name: str, col_name: str, *,
+                template: str | None = None, row_code: str | None = None) -> str:
     """Guess whether a fact is a ratio, EUR amount, or unknown.
 
-    The EBA export mixes absolute-euro rows and ratio rows in the same
-    sheet; the only cue is the row name. Anything mentioning 'percentage',
-    '%', or 'ratio' is a ratio; anything mentioning 'amount', 'capital',
-    'liabilities', 'exposure', 'measure' is EUR; else unknown.
+    Strategy:
+    1. For well-known ratio rows (e.g. KM2 'of which …' sub-rows), use the
+       template+row_code mapping so ambiguous row names don't misclassify.
+    2. Otherwise fall back to string heuristics on row/col name.
     """
+    if template == "K_90.01" and row_code in KM2_RATIO_ROWS:
+        return UnitType.RATIO.value
+
     text = f"{row_name or ''} {col_name or ''}".lower()
     if any(token in text for token in ("percentage", "% of", "ratio", " %")):
         return UnitType.RATIO.value
@@ -142,7 +168,11 @@ def parse_eba_export(path: str | Path) -> pd.DataFrame:
     row_name = long["Row Name"].fillna("").astype(str).str.strip()
     col_name = long["Column Name"].fillna("").astype(str).str.strip()
 
-    unit = [_infer_unit(rn, cn) for rn, cn in zip(row_name, col_name)]
+    row_code = long["Row"].apply(zero_pad_row_code)
+    unit = [
+        _infer_unit(rn, cn, template=tpl, row_code=rc)
+        for rn, cn, tpl, rc in zip(row_name, col_name, template, row_code)
+    ]
     value = [_normalize_value(rv, u) for rv, u in zip(long["raw_value"], unit)]
 
     out = pd.DataFrame(
@@ -152,7 +182,7 @@ def parse_eba_export(path: str | Path) -> pd.DataFrame:
             "country": long["Country"].fillna("").astype(str).str.strip(),
             "reference_date": long["reference_date"],
             "template": template,
-            "row_code": long["Row"].apply(zero_pad_row_code),
+            "row_code": row_code,
             "row_name": row_name,
             "col_code": long["Column"].apply(zero_pad_row_code),
             "col_name": col_name,

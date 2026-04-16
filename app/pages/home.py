@@ -157,7 +157,8 @@ def _render_hero(metric_key: str, peer_key: str, ref_date_iso: str):
     apply_layout(fig)
     fig.update_layout(
         title=f"{caption.label} — 2025-12-31 snapshot",
-        xaxis_title=None,
+        xaxis={"title": None, "showticklabels": False, "showgrid": False,
+               "zeroline": False, "range": [-0.6, 0.6]},
         yaxis_title=caption.label,
         showlegend=False,
         height=380,
@@ -184,7 +185,7 @@ def _render_hero(metric_key: str, peer_key: str, ref_date_iso: str):
     # Violin trace for the full universe shape.
     fig.add_trace(
         go.Violin(
-            y=values, x=["EU universe"] * len(values),
+            y=values, x=[0] * len(values),
             points=False, box_visible=True, meanline_visible=True,
             fillcolor="rgba(74, 106, 138, 0.12)",
             line_color=STEEL, opacity=0.9, name="Full universe",

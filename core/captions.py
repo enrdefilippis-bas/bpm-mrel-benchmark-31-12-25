@@ -123,22 +123,48 @@ METRIC_CAPTIONS: dict[str, MetricCaption] = {
 }
 
 
-# TLAC1 row groups used in composition & maturity analyses.
-TLAC1_ROW_GROUPS = {
-    "cet1": "0010",
-    "at1": "0020",
-    "tier2": "0060",
-    "eligible_before_adjustments": "0110",
-    "own_funds_and_eligible_after_adjustments": "0220",
-    "own_funds_and_subordinated_after_adjustments": "0230",
-    "trea": "0230",
-    "tem": "0240",
-    "subordinated_instruments_direct": "0120",
-    "eligible_not_subordinated": "0130",
-    "residual_maturity_1_to_2y": "0070",
-    "residual_maturity_2_to_5y": "0080",
-    "residual_maturity_5_to_10y": "0090",
-    "residual_maturity_perpetual": "0100",
+# Instrument-class labels used on the composition page (see
+# core.metrics.TLAC1_COMPOSITION_CLASSES for the row-code mapping).
+COMPOSITION_CLASS_LABELS: dict[str, str] = {
+    "cet1": "CET1",
+    "at1": "Additional Tier 1",
+    "tier2": "Tier 2",
+    "subord_eligible_liabilities": "Subordinated eligible liabilities",
+    "senior_eligible_liabilities": "Senior eligible liabilities",
+}
+
+COMPOSITION_CLASS_DESCRIPTION: dict[str, str] = {
+    "cet1": "Common Equity Tier 1 capital (TLAC1 row 0010).",
+    "at1": "Additional Tier 1 capital (TLAC1 row 0020).",
+    "tier2": "Tier 2 capital (TLAC1 row 0060).",
+    "subord_eligible_liabilities": (
+        "Subordinated eligible liabilities — own issuance plus intra-group "
+        "plus grandfathered plus T2 with residual maturity < 1y "
+        "(TLAC1 rows 0100 + 0110 + 0120 + 0130, col c0010)."
+    ),
+    "senior_eligible_liabilities": (
+        "Senior (non-subordinated) eligible liabilities — pre-cap plus "
+        "grandfathered plus post-Art 72b(3) capped amount "
+        "(TLAC1 rows 0140 + 0150 + 0160, col c0010)."
+    ),
+}
+
+
+# Maturity-bucket labels + descriptions (K_97.00 col c0050).
+MATURITY_BUCKET_LABELS: dict[str, str] = {
+    "maturity_1_to_2y":   "1–2y",
+    "maturity_2_to_5y":   "2–5y",
+    "maturity_5_to_10y":  "5–10y",
+    "maturity_10y_plus":  "10y+",
+    "maturity_perpetual": "Perpetual",
+}
+
+MATURITY_BUCKET_SOURCES: dict[str, str] = {
+    "maturity_1_to_2y":   "K_97.00 r0060 c0050",
+    "maturity_2_to_5y":   "K_97.00 r0070 c0050",
+    "maturity_5_to_10y":  "K_97.00 r0080 c0050",
+    "maturity_10y_plus":  "K_97.00 r0090 c0050",
+    "maturity_perpetual": "K_97.00 r0100 c0050",
 }
 
 

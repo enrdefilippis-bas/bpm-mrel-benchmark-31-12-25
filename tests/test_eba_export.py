@@ -30,6 +30,22 @@ def test_infer_unit_classifies_ratios_and_amounts():
     assert _infer_unit("unknown", "") == UnitType.UNKNOWN.value
 
 
+def test_infer_unit_km2_ratio_rows_override_string_heuristic():
+    """KM2 'of which …' sub-rows are ratios even when text reads like an amount."""
+    # Row 0050 text looks like an amount but the KM2 row-code override wins.
+    assert _infer_unit(
+        "EU-3a. Of which own funds and subordinated liabilities",
+        "a. T",
+        template="K_90.01", row_code="0050",
+    ) == UnitType.RATIO.value
+    # Non-KM2 templates still fall back to string heuristics.
+    assert _infer_unit(
+        "EU-3a. Of which own funds and subordinated liabilities",
+        "a. T",
+        template="K_91.00", row_code="0050",
+    ) == UnitType.AMOUNT_EUR.value
+
+
 def test_normalize_value_standardizes_percent_reporting():
     # Most banks report as decimals — pass through.
     assert _normalize_value(0.3402, UnitType.RATIO.value) == pytest.approx(0.3402)
