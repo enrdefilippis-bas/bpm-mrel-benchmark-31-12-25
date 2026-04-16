@@ -4,9 +4,10 @@ from __future__ import annotations
 import dash
 import pandas as pd
 import plotly.graph_objects as go
-from dash import Input, Output, callback, dcc, html
+from dash import Input, Output, State, callback, dcc, html
 
 from app import data
+from app.components.export_button import export_bar, graph_config
 from app.components.tooltip import metric_methodology
 from app.theme import (
     BPM_COLOR,
@@ -71,8 +72,9 @@ def layout():
                                "marginBottom": "10px"},
                     ),
                     html.Div(id="trend-methodology", className="meta-line"),
+                    export_bar("trend"),
                     dcc.Graph(id="trend-chart",
-                              config={"displayModeBar": False},
+                              config=graph_config("mrel_trend"),
                               style={"height": "520px"}),
                 ],
                 className="card",
@@ -188,3 +190,29 @@ def _render(peer_key, metric_key):
         margin={"l": 80, "r": 160, "t": 24, "b": 40},
     )
     return fig, metric_methodology(metric_key)
+
+
+@callback(
+    Output("trend-export-csv-dl", "data"),
+    Input("trend-export-csv-btn", "n_clicks"),
+    State("peer-set", "value"),
+    State("trend-metric", "value"),
+    prevent_initial_call=True,
+)
+def _export_csv(n_clicks, peer_key, metric_key):
+    if not n_clicks or not peer_key or not metric_key:
+        return dash.no_update
+    wide = data.load_km2()
+    peer_leis = data.resolve_peers(peer_key)
+    cols = ["entity_lei", "entity_name", "country", "reference_date", metric_key]
+    req_col = {
+        "mrel_pct_trea": "mrel_requirement_trea",
+        "mrel_pct_tem": "mrel_requirement_tem",
+    }.get(metric_key)
+    if req_col and req_col in wide.columns:
+        cols.append(req_col)
+    snap = (
+        wide[wide["entity_lei"].isin(peer_leis)][cols]
+        .sort_values(["entity_name", "reference_date"])
+    )
+    return dcc.send_data_frame(snap.to_csv, "mrel_trend.csv", index=False)

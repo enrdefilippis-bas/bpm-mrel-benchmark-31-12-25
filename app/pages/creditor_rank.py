@@ -12,9 +12,10 @@ from __future__ import annotations
 import dash
 import pandas as pd
 import plotly.graph_objects as go
-from dash import Input, Output, callback, dcc, html
+from dash import Input, Output, State, callback, dcc, html
 
 from app import data
+from app.components.export_button import export_bar, graph_config
 from app.theme import BPM_COLOR, GREY_400, GREY_600, NAVY, apply_layout
 from core.captions import CREDITOR_SCOPE_DESCRIPTION, CREDITOR_SCOPE_LABELS
 from core.metrics import CREDITOR_RANK_SOURCES, creditor_rank_breakdown
@@ -129,8 +130,9 @@ def layout():
                                "marginBottom": "10px"},
                     ),
                     html.Div(id="creditor-methodology", className="meta-line"),
+                    export_bar("creditor"),
                     dcc.Graph(id="creditor-chart",
-                              config={"displayModeBar": False}),
+                              config=graph_config("mrel_creditor_rank")),
                 ],
                 className="card",
             ),
@@ -318,3 +320,29 @@ def _render(peer_key, ref_date_iso, scope, mode, sort_key):
                 "xanchor": "right", "title": {"text": "Insolvency rank"}},
     )
     return fig, _methodology(scope)
+
+
+@callback(
+    Output("creditor-export-csv-dl", "data"),
+    Input("creditor-export-csv-btn", "n_clicks"),
+    State("peer-set", "value"),
+    State("reference-date", "value"),
+    State("creditor-scope", "value"),
+    prevent_initial_call=True,
+)
+def _export_csv(n_clicks, peer_key, ref_date_iso, scope):
+    if not n_clicks or not peer_key or not ref_date_iso:
+        return dash.no_update
+    ref_date = pd.Timestamp(ref_date_iso)
+    peer_leis = data.resolve_peers(peer_key)
+    br = creditor_rank_breakdown(data.load_facts(), scope=scope)
+    br = br[(br["reference_date"] == ref_date)
+            & (br["entity_lei"].isin(peer_leis))].copy()
+    names = data.load_banks().set_index("entity_lei")["entity_name"].to_dict()
+    br["entity_name"] = br["entity_lei"].map(names)
+    br["scope"] = scope
+    snap = br[["entity_lei", "entity_name", "scope", "reference_date",
+               "rank", "value"]].sort_values(["entity_name", "rank"])
+    return dcc.send_data_frame(
+        snap.to_csv, f"mrel_creditor_rank_{scope}.csv", index=False,
+    )

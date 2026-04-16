@@ -9,9 +9,10 @@ from __future__ import annotations
 import dash
 import pandas as pd
 import plotly.graph_objects as go
-from dash import Input, Output, callback, dcc, html
+from dash import Input, Output, State, callback, dcc, html
 
 from app import data
+from app.components.export_button import export_bar, graph_config
 from app.theme import BPM_COLOR, GREY_400, GREY_600, NAVY, apply_layout
 from core.captions import (
     COMPOSITION_CLASS_DESCRIPTION,
@@ -98,8 +99,9 @@ def layout():
                                "marginBottom": "10px"},
                     ),
                     html.Div(id="composition-methodology", className="meta-line"),
+                    export_bar("composition"),
                     dcc.Graph(id="composition-chart",
-                              config={"displayModeBar": False}),
+                              config=graph_config("mrel_composition")),
                 ],
                 className="card",
             ),
@@ -269,3 +271,32 @@ def _render(peer_key, ref_date_iso, mode, sort_key):
     del tick_colors  # reserved for a future enhancement
 
     return fig, _methodology()
+
+
+@callback(
+    Output("composition-export-csv-dl", "data"),
+    Input("composition-export-csv-btn", "n_clicks"),
+    State("peer-set", "value"),
+    State("reference-date", "value"),
+    prevent_initial_call=True,
+)
+def _export_csv(n_clicks, peer_key, ref_date_iso):
+    if not n_clicks or not peer_key or not ref_date_iso:
+        return dash.no_update
+    comp = tlac1_composition(data.load_facts()).merge(
+        data.load_banks()[["entity_lei", "entity_name", "country"]],
+        on="entity_lei", how="left",
+    )
+    ref_date = pd.Timestamp(ref_date_iso)
+    peer_leis = data.resolve_peers(peer_key)
+    snap = comp[
+        (comp["reference_date"] == ref_date)
+        & (comp["entity_lei"].isin(peer_leis))
+    ].copy()
+    cols = (
+        ["entity_lei", "entity_name", "country", "reference_date"]
+        + CLASS_KEYS + ["total_stack"]
+    )
+    return dcc.send_data_frame(
+        snap[cols].to_csv, "mrel_composition.csv", index=False,
+    )

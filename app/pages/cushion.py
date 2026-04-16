@@ -9,9 +9,10 @@ from __future__ import annotations
 import dash
 import pandas as pd
 import plotly.graph_objects as go
-from dash import Input, Output, callback, dcc, html
+from dash import Input, Output, State, callback, dcc, html
 
 from app import data
+from app.components.export_button import export_bar, graph_config
 from app.components.tooltip import metric_methodology
 from app.theme import (
     BPM_COLOR,
@@ -48,12 +49,13 @@ def layout():
             html.Div(id="cushion-badges",
                      style={"display": "flex", "gap": "12px",
                             "marginBottom": "16px"}),
+            export_bar("cushion"),
             html.Div(
                 [
                     html.H3("MREL as % of TREA"),
                     metric_methodology("mrel_pct_trea"),
                     dcc.Graph(id="cushion-trea-chart",
-                              config={"displayModeBar": False},
+                              config=graph_config("mrel_cushion_trea"),
                               style={"height": "620px"}),
                 ],
                 className="card",
@@ -63,7 +65,7 @@ def layout():
                     html.H3("MREL as % of TEM"),
                     metric_methodology("mrel_pct_tem"),
                     dcc.Graph(id="cushion-tem-chart",
-                              config={"displayModeBar": False},
+                              config=graph_config("mrel_cushion_tem"),
                               style={"height": "620px"}),
                 ],
                 className="card",
@@ -226,3 +228,28 @@ def _render(peer_key: str, ref_date_iso: str):
     tem_fig = _cushion_figure(wide, peer_leis, ref_date,
                               "mrel_pct_tem", "mrel_requirement_tem")
     return badges, trea_fig, tem_fig
+
+
+@callback(
+    Output("cushion-export-csv-dl", "data"),
+    Input("cushion-export-csv-btn", "n_clicks"),
+    State("peer-set", "value"),
+    State("reference-date", "value"),
+    prevent_initial_call=True,
+)
+def _export_csv(n_clicks, peer_key, ref_date_iso):
+    if not n_clicks or not peer_key or not ref_date_iso:
+        return dash.no_update
+    wide = data.load_km2()
+    ref_date = pd.Timestamp(ref_date_iso)
+    peer_leis = data.resolve_peers(peer_key)
+    snap = wide[
+        (wide["reference_date"] == ref_date)
+        & (wide["entity_lei"].isin(peer_leis))
+    ][[
+        "entity_lei", "entity_name", "country", "reference_date",
+        "mrel_pct_trea", "mrel_requirement_trea", "mrel_surplus_trea_pp",
+        "mrel_pct_tem", "mrel_requirement_tem", "mrel_surplus_tem_pp",
+        "subord_pct_trea", "subordination_ratio",
+    ]].sort_values("mrel_pct_trea", ascending=False)
+    return dcc.send_data_frame(snap.to_csv, "mrel_cushion.csv", index=False)

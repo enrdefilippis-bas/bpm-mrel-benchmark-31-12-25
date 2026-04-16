@@ -4,9 +4,10 @@ from __future__ import annotations
 import dash
 import pandas as pd
 import plotly.graph_objects as go
-from dash import Input, Output, callback, dcc, html
+from dash import Input, Output, State, callback, dcc, html
 
 from app import data
+from app.components.export_button import export_bar, graph_config
 from app.theme import BPM_COLOR, GREY_400, GREY_600, NAVY, apply_layout
 from core.captions import MATURITY_BUCKET_LABELS, MATURITY_BUCKET_SOURCES
 from core.metrics import TLAC3_MATURITY_BUCKETS, tlac3_maturity
@@ -81,8 +82,9 @@ def layout():
                         ],
                         className="meta-line",
                     ),
+                    export_bar("maturity"),
                     dcc.Graph(id="maturity-chart",
-                              config={"displayModeBar": False}),
+                              config=graph_config("mrel_maturity")),
                 ],
                 className="card",
             ),
@@ -207,3 +209,33 @@ def _render(peer_key, ref_date_iso, sort_key):
         showlegend=False,
     )
     return fig
+
+
+@callback(
+    Output("maturity-export-csv-dl", "data"),
+    Input("maturity-export-csv-btn", "n_clicks"),
+    State("peer-set", "value"),
+    State("reference-date", "value"),
+    prevent_initial_call=True,
+)
+def _export_csv(n_clicks, peer_key, ref_date_iso):
+    if not n_clicks or not peer_key or not ref_date_iso:
+        return dash.no_update
+    mat = tlac3_maturity(data.load_facts()).merge(
+        data.load_banks()[["entity_lei", "entity_name", "country"]],
+        on="entity_lei", how="left",
+    )
+    ref_date = pd.Timestamp(ref_date_iso)
+    peer_leis = data.resolve_peers(peer_key)
+    snap = mat[
+        (mat["reference_date"] == ref_date)
+        & (mat["entity_lei"].isin(peer_leis))
+    ].copy()
+    cols = (
+        ["entity_lei", "entity_name", "country", "reference_date"]
+        + BUCKET_KEYS + BUCKET_SHARE_COLS + ["total_eligible"]
+    )
+    snap = snap[[c for c in cols if c in snap.columns]]
+    return dcc.send_data_frame(
+        snap.to_csv, "mrel_maturity.csv", index=False,
+    )

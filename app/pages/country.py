@@ -9,9 +9,10 @@ from __future__ import annotations
 import dash
 import pandas as pd
 import plotly.graph_objects as go
-from dash import Input, Output, callback, dcc, html
+from dash import Input, Output, State, callback, dcc, html
 
 from app import data
+from app.components.export_button import export_bar, graph_config
 from app.components.tooltip import metric_methodology
 from app.theme import (
     BPM_COLOR,
@@ -103,8 +104,9 @@ def layout():
                                "marginBottom": "10px"},
                     ),
                     html.Div(id="country-methodology", className="meta-line"),
+                    export_bar("country"),
                     dcc.Graph(id="country-chart",
-                              config={"displayModeBar": False}),
+                              config=graph_config("mrel_country")),
                 ],
                 className="card",
             ),
@@ -250,3 +252,24 @@ def _render(metric_key, sort_key, ref_date_iso):
         "France coverage."
     )
     return fig, metric_methodology(metric_key), coverage
+
+
+@callback(
+    Output("country-export-csv-dl", "data"),
+    Input("country-export-csv-btn", "n_clicks"),
+    State("country-metric", "value"),
+    State("reference-date", "value"),
+    prevent_initial_call=True,
+)
+def _export_csv(n_clicks, metric_key, ref_date_iso):
+    if not n_clicks or not metric_key or not ref_date_iso:
+        return dash.no_update
+    wide = data.load_km2()
+    ref_date = pd.Timestamp(ref_date_iso)
+    snap = wide[wide["reference_date"] == ref_date].dropna(
+        subset=[metric_key, "country"]
+    )[["entity_lei", "entity_name", "country", "reference_date", metric_key]]
+    snap = snap.sort_values(["country", "entity_name"])
+    return dcc.send_data_frame(
+        snap.to_csv, f"mrel_country_{metric_key}.csv", index=False,
+    )

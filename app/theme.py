@@ -215,6 +215,34 @@ GLOBAL_CSS: Final[str] = f"""
     margin-top: 6px;
     font-style: italic;
   }}
+  .export-bar {{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 12px 0;
+  }}
+  .export-btn {{
+    background: {NAVY};
+    color: {WHITE};
+    border: 1px solid {NAVY};
+    border-radius: 4px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+  }}
+  .export-btn:hover {{
+    background: {NAVY_SOFT};
+    border-color: {NAVY_SOFT};
+  }}
+  .export-btn:active {{
+    background: {STEEL};
+  }}
+  .export-hint {{
+    color: {GREY_400};
+    font-size: 11px;
+  }}
   .dcc-dropdown .Select-control {{
     background: {NAVY} !important;
     border-color: {STEEL} !important;
