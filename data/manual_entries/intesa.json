@@ -1,33 +1,33 @@
 {
   "entity_name": "Intesa Sanpaolo S.p.A.",
-  "source_pdf": "TBD — drop the latest Pillar 3 PDF in data/raw/pdfs/intesa/",
-  "notes": "Ratios as decimals (0.3402 = 34.02%). Amounts in EUR (not millions). Set cells to null when not yet filled in.",
+  "source_pdf": "data/raw/pdfs/intesa/pillar3_2025_Q4.pdf",
+  "notes": "Ratios as decimals (0.3402 = 34.02%). Amounts in EUR (not millions). Extracted from Pillar 3 as at 31.12.2025 (Italian language PDF).",
   "reference_dates": {
     "2025-12-31": {
       "km2": {
-        "mrel_total_amount":            null,
-        "trea":                         null,
-        "tem":                          null,
-        "mrel_pct_trea":                null,
-        "subord_pct_trea":              null,
-        "mrel_pct_tem":                 null,
-        "subord_pct_tem":               null,
-        "mrel_requirement_trea":        null,
-        "mrel_subord_requirement_trea": null,
-        "mrel_requirement_tem":         null,
-        "mrel_subord_requirement_tem":  null
+        "mrel_total_amount":            115648000000,
+        "trea":                         310201000000,
+        "tem":                          831920000000,
+        "mrel_pct_trea":                0.3728,
+        "subord_pct_trea":              0.2171,
+        "mrel_pct_tem":                 0.1390,
+        "subord_pct_tem":               0.0809,
+        "mrel_requirement_trea":        0.2100,
+        "mrel_subord_requirement_trea": 0.1350,
+        "mrel_requirement_tem":         0.0594,
+        "mrel_subord_requirement_tem":  0.0594
       },
       "tlac1": {
-        "cet1":                  null,
-        "at1":                   null,
-        "tier2":                 null,
-        "subord_own_issuance":   null,
-        "subord_intra_group":    null,
-        "subord_grandfathered":  null,
-        "subord_t2_residual":    null,
-        "senior_pre_cap":        null,
-        "senior_grandfathered":  null,
-        "senior_post_cap":       null
+        "cet1":                  40854000000,
+        "at1":                   7650000000,
+        "tier2":                 9519000000,
+        "subord_own_issuance":   8460000000,
+        "subord_intra_group":    0,
+        "subord_grandfathered":  0,
+        "subord_t2_residual":    1013000000,
+        "senior_pre_cap":        48281000000,
+        "senior_grandfathered":  30000000,
+        "senior_post_cap":       48310000000
       }
     }
   }
