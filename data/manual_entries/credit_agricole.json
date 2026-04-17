@@ -1,33 +1,33 @@
 {
   "entity_name": "Crédit Agricole S.A.",
-  "source_pdf": "TBD — drop the latest Pillar 3 PDF in data/raw/pdfs/credit_agricole/",
-  "notes": "Ratios as decimals (0.3402 = 34.02%). Amounts in EUR (not millions). Set cells to null when not yet filled in.",
+  "source_pdf": "data/raw/pdfs/ca-sa/pillar3_2025_Q4.pdf",
+  "notes": "Ratios as decimals (0.3402 = 34.02%). Amounts in EUR (not millions). Extracted from Risk Report Pillar 3 - 2025 (CA S.A. / CA Group resolution entity level). Published 2026-04-10.",
   "reference_dates": {
     "2025-12-31": {
       "km2": {
-        "mrel_total_amount":            null,
-        "trea":                         null,
-        "tem":                          null,
-        "mrel_pct_trea":                null,
-        "subord_pct_trea":              null,
-        "mrel_pct_tem":                 null,
-        "subord_pct_tem":               null,
-        "mrel_requirement_trea":        null,
-        "mrel_subord_requirement_trea": null,
-        "mrel_requirement_tem":         null,
-        "mrel_subord_requirement_tem":  null
+        "mrel_total_amount":            210698000000,
+        "trea":                         662703000000,
+        "tem":                          2214046000000,
+        "mrel_pct_trea":                0.3179,
+        "subord_pct_trea":              0.2697,
+        "mrel_pct_tem":                 0.0952,
+        "subord_pct_tem":               0.0807,
+        "mrel_requirement_trea":        0.2179,
+        "mrel_subord_requirement_trea": 0.1719,
+        "mrel_requirement_tem":         0.0625,
+        "mrel_subord_requirement_tem":  0.0625
       },
       "tlac1": {
-        "cet1":                  null,
-        "at1":                   null,
-        "tier2":                 null,
-        "subord_own_issuance":   null,
-        "subord_intra_group":    null,
-        "subord_grandfathered":  null,
-        "subord_t2_residual":    null,
-        "senior_pre_cap":        null,
-        "senior_grandfathered":  null,
-        "senior_post_cap":       null
+        "cet1":                  114581000000,
+        "at1":                   7998000000,
+        "tier2":                 16147000000,
+        "subord_own_issuance":   38042000000,
+        "subord_intra_group":    0,
+        "subord_grandfathered":  0,
+        "subord_t2_residual":    2305000000,
+        "senior_pre_cap":        29667000000,
+        "senior_grandfathered":  3904000000,
+        "senior_post_cap":       0
       }
     }
   }

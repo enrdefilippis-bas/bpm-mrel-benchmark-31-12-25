@@ -1,11 +1,9 @@
 """Merge the EBA export with the per-bank PDF / manual-entry parsers.
 
-Precedence rule: if a bank appears in *both* the EBA export and a
-bank-specific parser, the EBA fact wins — it is the authoritative
-supervisory feed. The bank-specific source only contributes rows for
-banks (LEIs) that are absent from the EBA export. This keeps the
-peer-set coverage stable across quarters: once a bank joins the EBA
-release, its PDF parser silently stops contributing.
+Precedence rule: EBA wins per (LEI, template, reference_date). A
+bank-specific parser can supplement templates or dates that the EBA
+export does not cover for that bank (e.g. BBVA has KM2 at 2025-06-30
+in EBA but the manual entry adds KM2 at 2025-12-31 and TLAC1).
 """
 from __future__ import annotations
 
@@ -29,12 +27,31 @@ def merge_sources(
         eba_leis = set(eba_facts["entity_lei"].unique())
         base = eba_facts
 
+    eba_keys: set[tuple[str, str, str]] = set()
+    if not base.empty:
+        eba_keys = set(
+            zip(
+                base["entity_lei"].astype(str),
+                base["template"].astype(str),
+                base["reference_date"].astype(str),
+            )
+        )
+
     pieces: list[pd.DataFrame] = [base]
     for frame in extra_frames:
         if frame is None or frame.empty:
             continue
-        # Drop any LEI already covered by the EBA export — EBA wins.
-        add = frame[~frame["entity_lei"].isin(eba_leis)]
+        keep_mask = ~pd.Series(
+            list(
+                zip(
+                    frame["entity_lei"].astype(str),
+                    frame["template"].astype(str),
+                    frame["reference_date"].astype(str),
+                )
+            ),
+            index=frame.index,
+        ).isin(eba_keys)
+        add = frame[keep_mask]
         if add.empty:
             continue
         pieces.append(add)

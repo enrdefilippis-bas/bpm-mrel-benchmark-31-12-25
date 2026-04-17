@@ -27,7 +27,7 @@
         "subord_t2_residual":    1013000000,
         "senior_pre_cap":        48281000000,
         "senior_grandfathered":  30000000,
-        "senior_post_cap":       48310000000
+        "senior_post_cap":       0
       }
     }
   }
