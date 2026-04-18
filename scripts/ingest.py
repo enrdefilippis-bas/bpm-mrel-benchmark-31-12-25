@@ -20,6 +20,7 @@ from ingestion.normalize import load_missing_bank_facts, merge_sources
 
 DEFAULT_EXPORT = ROOT / "data" / "raw" / "p3mreldata_2025q4.xlsx"
 DEFAULT_ENTRIES = ROOT / "data" / "manual_entries"
+DEFAULT_PDFS = ROOT / "data" / "raw" / "pdfs"
 PROCESSED = ROOT / "data" / "processed"
 
 
@@ -35,7 +36,18 @@ def main() -> int:
         "--manual-entries",
         type=Path,
         default=DEFAULT_ENTRIES,
-        help="Directory of per-bank manual-entry JSONs (for banks missing from the EBA export).",
+        help="Directory of per-bank manual-entry JSONs (fallback when PDF parse fails).",
+    )
+    parser.add_argument(
+        "--pdfs-dir",
+        type=Path,
+        default=DEFAULT_PDFS,
+        help="Directory of per-bank Pillar 3 PDFs. Parsers run here first; JSONs are the fallback.",
+    )
+    parser.add_argument(
+        "--no-pdfs",
+        action="store_true",
+        help="Skip PDF parsing; use manual-entry JSONs only (legacy behavior).",
     )
     parser.add_argument(
         "--out-dir",
@@ -50,7 +62,10 @@ def main() -> int:
     eba_facts = parse_eba_export(args.eba_export)
     validate_facts(eba_facts)
 
-    missing_facts, missing_counts = load_missing_bank_facts(args.manual_entries)
+    missing_facts, missing_counts = load_missing_bank_facts(
+        args.manual_entries,
+        pdfs_dir=None if args.no_pdfs else args.pdfs_dir,
+    )
     facts = merge_sources(eba_facts, missing_facts)
     facts_path = args.out_dir / "facts.parquet"
     facts.to_parquet(facts_path, index=False)

@@ -64,19 +64,46 @@ def merge_sources(
 def load_missing_bank_facts(
     entries_dir: Path | str,
     parsers: tuple[type[BaseBankParser], ...] = ALL_PARSERS,
+    pdfs_dir: Path | str | None = None,
 ) -> tuple[pd.DataFrame, dict[str, int]]:
-    """Load facts from every parser's manual-entries JSON.
+    """Load facts for every missing bank, preferring PDF parsing when available.
+
+    For each parser: if ``pdfs_dir`` is provided and a PDF exists at
+    ``{pdfs_dir}/{stem}/pillar3_*.pdf``, try ``parse_pdf``. On success, use
+    the PDF-extracted facts. On failure (or if no PDF), fall back to the
+    manual-entries JSON at ``{entries_dir}/{stem}.json``.
 
     Returns a long-format facts frame plus a per-parser fact-count
     dictionary (useful for the ingest log).
     """
     entries_dir = Path(entries_dir)
+    pdfs_dir = Path(pdfs_dir) if pdfs_dir is not None else None
     parts: list[pd.DataFrame] = []
     counts: dict[str, int] = {}
     for cls in parsers:
-        path = entries_dir / f"{_entry_stem(cls)}.json"
-        df = cls.from_manual_entries(path)
+        stem = _entry_stem(cls)
+        df = empty_facts()
+        source_used = "manual"
+
+        if pdfs_dir is not None:
+            pdf_candidates = sorted((pdfs_dir / _pdf_stem(cls)).glob("pillar3_*.pdf")) \
+                if (pdfs_dir / _pdf_stem(cls)).exists() else []
+            for pdf_path in pdf_candidates:
+                try:
+                    df = cls.parse_pdf(pdf_path)
+                    source_used = f"pdf:{pdf_path.name}"
+                    break
+                except Exception:
+                    # PDF layout may have drifted; try next PDF or fall through
+                    continue
+
+        if df.empty:
+            json_path = entries_dir / f"{stem}.json"
+            df = cls.from_manual_entries(json_path)
+            source_used = "manual"
+
         counts[cls.meta.source_tag] = int(len(df))
+        counts[f"{cls.meta.source_tag}:origin"] = source_used  # for the ingest log
         if not df.empty:
             parts.append(df)
     merged = pd.concat(parts, ignore_index=True) if parts else empty_facts()
@@ -84,9 +111,24 @@ def load_missing_bank_facts(
 
 
 def _entry_stem(cls: type[BaseBankParser]) -> str:
-    """Derive the JSON filename from the parser's source tag.
+    """Derive the manual-entries JSON filename from the parser's source tag.
 
     ``pdf-intesa`` → ``intesa``; ``pdf-credit-agricole`` → ``credit_agricole``.
     Using source_tag keeps the JSON filename in sync with the Source enum.
     """
     return cls.meta.source_tag.removeprefix("pdf-").replace("-", "_")
+
+
+def _pdf_stem(cls: type[BaseBankParser]) -> str:
+    """Derive the PDF subdirectory name for a parser.
+
+    Matches the folder layout under ``data/raw/pdfs/``:
+    ``pdf-credit-agricole`` → ``ca-sa``; ``pdf-intesa`` → ``intesa``.
+    Crédit Agricole is a legacy alias; every other bank's folder is the
+    parser stem as-is.
+    """
+    mapping = {
+        "pdf-credit-agricole": "ca-sa",
+    }
+    return mapping.get(cls.meta.source_tag,
+                       cls.meta.source_tag.removeprefix("pdf-"))

@@ -5,6 +5,14 @@ By default the script is **dry-run** — it only prints the URLs it would
 download. Pass ``--execute`` to actually fetch. This is deliberate:
 banks often shift PDF URLs each quarter, so a blind fetch can easily
 download a wrong file. Eyeball the URLs first.
+
+End-to-end flow::
+
+    python scripts/fetch_pdfs.py --execute   # downloads PDFs (this script)
+    python scripts/ingest.py                 # parses PDFs → facts.parquet
+
+The ingest step tries ``BaseBankParser.parse_pdf`` on each downloaded PDF
+and falls back to the manual-entries JSON if parsing fails.
 """
 from __future__ import annotations
 
