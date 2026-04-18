@@ -93,25 +93,23 @@ class BaseBankParser(ABC):
     # ---- Manual-entry path ---------------------------------------------------
 
     @classmethod
-    def from_manual_entries(cls, entries_path: Path | str) -> pd.DataFrame:
-        """Build a canonical facts frame from a JSON entries file.
+    def _build_facts(cls, per_date: dict, entity_name: str | None = None) -> pd.DataFrame:
+        """Build a canonical facts frame from a per_date dict structure.
 
-        The JSON has one block per reference date under ``reference_dates``,
-        with sub-blocks ``km2`` and optionally ``tlac1``. Cells whose
-        value is ``null`` are skipped — the analyst only fills what they
-        have from the Pillar 3 PDF. Ratios are expected as decimals
-        (0.3402 for 34.02%), consistent with the EBA export convention.
+        Args:
+            per_date: Dict mapping date_iso (e.g., "2025-12-31") to a dict with
+                     optional "km2" and "tlac1" sub-blocks. Used by both
+                     from_manual_entries and parse_pdf.
+            entity_name: Override entity name; defaults to cls.meta.name.
+
+        The dict structure matches reference_dates from manual_entries JSON.
+        KM2 cells map to KM2_CELLS keys (amounts in EUR, ratios as decimals).
+        TLAC1 cells map to TLAC1_CELLS keys (amounts in EUR).
         """
-        entries_path = Path(entries_path)
-        if not entries_path.exists():
-            return empty_facts()
-
-        payload = json.loads(entries_path.read_text())
-        entity_name = payload.get("entity_name", cls.meta.name)
-        per_date = payload.get("reference_dates", {})
         if not per_date:
             return empty_facts()
 
+        entity_name = entity_name or cls.meta.name
         now = pd.Timestamp.now("UTC").tz_localize(None)
         rows: list[dict] = []
 
@@ -148,6 +146,25 @@ class BaseBankParser(ABC):
         df = pd.DataFrame(rows)
         df = df.astype({k: v for k, v in FACT_COLUMNS.items() if k in df})
         return validate_facts(df)
+
+    @classmethod
+    def from_manual_entries(cls, entries_path: Path | str) -> pd.DataFrame:
+        """Build a canonical facts frame from a JSON entries file.
+
+        The JSON has one block per reference date under ``reference_dates``,
+        with sub-blocks ``km2`` and optionally ``tlac1``. Cells whose
+        value is ``null`` are skipped — the analyst only fills what they
+        have from the Pillar 3 PDF. Ratios are expected as decimals
+        (0.3402 for 34.02%), consistent with the EBA export convention.
+        """
+        entries_path = Path(entries_path)
+        if not entries_path.exists():
+            return empty_facts()
+
+        payload = json.loads(entries_path.read_text())
+        entity_name = payload.get("entity_name", cls.meta.name)
+        per_date = payload.get("reference_dates", {})
+        return cls._build_facts(per_date, entity_name=entity_name)
 
     # ---- PDF path (subclass hook) --------------------------------------------
 

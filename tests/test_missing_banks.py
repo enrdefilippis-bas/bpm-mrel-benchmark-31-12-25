@@ -50,10 +50,10 @@ def test_five_parsers_cover_all_missing_banks():
 
 
 def test_parse_pdf_default_raises_not_implemented(tmp_path: Path):
-    dummy = tmp_path / "fake.pdf"
-    dummy.write_bytes(b"")
-    with pytest.raises(NotImplementedError):
-        IntesaParser.parse_pdf(dummy)
+    # NOTE: This test is no longer valid since all 5 parsers now implement
+    # parse_pdf (even if partially). The test is kept for documentation but
+    # skipped. See test_pdf_parsers.py for validation of parse_pdf output.
+    pytest.skip("parse_pdf now implemented for all parsers")
 
 
 def test_entry_stem_derives_filename_from_source_tag():
