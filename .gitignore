@@ -25,3 +25,9 @@ htmlcov/
 
 # Dash / Plotly cache
 .dash_cache/
+
+# CI venv + scratch / planning files (never tracked)
+.venv_ci/
+debug_*.py
+test_intesa_parser.py
+PARSER_PLANNING_BRIEF.txt

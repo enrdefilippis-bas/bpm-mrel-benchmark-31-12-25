@@ -1,0 +1,28 @@
+app = "mrel-peer-benchmark"
+primary_region = "fra"
+
+[build]
+  builder = "pacer"
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "8080"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [http_service.checks]
+    grace_period = "10s"
+    interval = "30s"
+    timeout = "5s"
+    type = "http"
+    method = "get"
+    path = "/"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
