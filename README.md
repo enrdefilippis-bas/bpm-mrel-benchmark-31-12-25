@@ -1,5 +1,9 @@
 # mrel-peer-benchmark
 
+[![Tests passing](https://img.shields.io/badge/tests-passing-brightgreen)](https://github.com/enrdefilippis-bas/mrel-peer-benchmark)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue)](https://www.python.org/)
+[![Deploy to Fly.io](https://fly.io/badge.svg)](https://fly.io/)
+
 Cross-bank **MREL capacity benchmarking** tool built on official EBA Pillar 3
 disclosures (EU KM2, EU TLAC1, EU TLAC3/TLAC3b, ILAC). Anchored on
 **Banco BPM** as the reference bank, with peer comparison against a tight
@@ -25,10 +29,10 @@ maturity, subordination and quarterly trend.
 - **Primary:** EBA Pillar 3 cell-level export
   (`data/raw/p3mreldata_2025q4.xlsx`) — 112 banks, 27 countries, 8 templates,
   quarterly (2025-06-30, 2025-09-30, 2025-12-31).
-- **Supplementary:** Manual-entry JSON files for banks missing from the EBA
-  export (Intesa Sanpaolo, UniCredit, BBVA, Crédit Agricole S.A., Société
-  Générale). Populate these by hand from each bank's Pillar 3 PDF until the
-  automated `parse_pdf` path is implemented.
+- **Supplementary:** Automated PDF parsing (Intesa Sanpaolo, UniCredit, BBVA,
+  Crédit Agricole S.A., Société Générale) via `ingestion/missing_banks/` 
+  parsers, with fallback to manual-entry JSON files in `data/manual_entries/` 
+  if needed.
 
 ## Setup
 
@@ -55,16 +59,19 @@ python -m app.app
 Re-run `scripts/ingest.py` whenever a new `p3mreldata_*.xlsx` is dropped in
 `data/raw/` or a manual-entry JSON is filled in.
 
-## Adding a missing bank manually
+## Adding a missing bank
 
-Until the per-bank `parse_pdf` implementations land, fill in one of the
-templates under `data/manual_entries/` (one JSON per bank: `intesa.json`,
-`unicredit.json`, …). Ratios are stored as decimals (`0.3402 = 34.02%`),
-amounts in EUR. See `data/manual_entries/README.md` for the full workflow.
+Missing banks are ingested via automated PDF parsers in `ingestion/missing_banks/`.
+For banks with native parsers (Intesa, UniCredit, BBVA, Crédit Agricole, Société Générale), 
+ensure the Pillar 3 PDF is available in `data/raw/pdfs/<bank_name>/` and 
+run `python scripts/ingest.py`.
+
+As a fallback, manually populate JSON files under `data/manual_entries/` 
+(one per bank: `intesa.json`, `unicredit.json`, …). Ratios are stored as decimals 
+(`0.3402 = 34.02%`), amounts in EUR. See `data/manual_entries/README.md` for details.
 
 Precedence rule: the EBA export always wins on an LEI overlap. A manual
-entry for a bank already present in the EBA release is silently dropped —
-so once a bank joins the EBA feed, removing its JSON is safe but optional.
+entry for a bank already present in the EBA release is silently dropped.
 
 ## Peer sets
 
@@ -115,6 +122,7 @@ app/
 scripts/
   ingest.py               end-to-end: EBA + manual entries → parquet + log
   fetch_pdfs.py           dry-run PDF fetcher (use --execute to download)
+  capture_screenshots.py   Playwright-based capture of all 8 pages for README
 tests/                    pytest — 40/40 green as of Phase 6
 docs/
   data-dictionary.md      template cell ↔ metric mapping
@@ -137,12 +145,24 @@ python -m pytest -q
 
 Tests cover: EBA export parsing, metric derivations, ranking edge cases,
 peer-set resolution, composition / maturity cell mapping, creditor-rank
-breakdown, and the missing-bank manual-entry pipeline.
+breakdown, and the missing-bank PDF-parser pipeline.
 
 ## Screenshots
 
-_Drop screenshots of the Home hub, Cushion, Composition, Maturity and
-Outliers pages into `docs/screenshots/` and link them here._
+Generate with `python scripts/capture_screenshots.py` (requires the app running locally at `http://localhost:8050`):
+
+![Home](docs/screenshots/home.png)
+![Cushion](docs/screenshots/cushion.png)
+![Composition](docs/screenshots/composition.png)
+![Maturity](docs/screenshots/maturity.png)
+![Trend](docs/screenshots/trend.png)
+![Creditor rank](docs/screenshots/creditor-rank.png)
+![Country](docs/screenshots/country.png)
+![Outliers](docs/screenshots/outliers.png)
+
+## Deploy
+
+Production deploy via Fly.io — see [`DEPLOY.md`](DEPLOY.md) for step-by-step flyctl commands.
 
 ## Related work
 
