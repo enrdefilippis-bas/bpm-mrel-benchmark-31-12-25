@@ -11,7 +11,15 @@ from pathlib import Path
 
 import pandas as pd
 
-from core.metrics import attach_bank_meta, km2_wide
+from core.metrics import (
+    attach_bank_meta,
+    cet1_ratio,
+    km2_wide,
+    leverage_ratio,
+    t1_capital_ratio,
+    total_assets,
+    total_capital_ratio,
+)
 from core.peers import ALL_PEER_SETS, BPM_LEI, PeerSet, resolve_peer_set
 from core.schema import empty_facts
 
@@ -40,7 +48,21 @@ def load_banks() -> pd.DataFrame:
 @lru_cache(maxsize=1)
 def load_km2() -> pd.DataFrame:
     """Wide KM2 metrics enriched with bank display name + country."""
-    return attach_bank_meta(km2_wide(load_facts()), load_banks())
+    facts = load_facts()
+    km2 = km2_wide(facts)
+
+    # Add new solvency metrics
+    ta = total_assets(facts)
+    c1r = cet1_ratio(facts)
+    tcr = total_capital_ratio(facts)
+    lr = leverage_ratio(facts)
+
+    # Merge all metrics
+    for df in [ta, c1r, tcr, lr]:
+        if not df.empty:
+            km2 = km2.merge(df, on=["entity_lei", "reference_date"], how="left")
+
+    return attach_bank_meta(km2, load_banks())
 
 
 def available_reference_dates() -> list[pd.Timestamp]:
@@ -79,7 +101,11 @@ def peer_set_by_key(key: str) -> PeerSet:
 
 def resolve_peers(key: str) -> list[str]:
     """Return the concrete LEI list for a peer-set key."""
-    return resolve_peer_set(peer_set_by_key(key), load_banks())
+    peer_set = peer_set_by_key(key)
+    # For dynamic peer sets (like EU_OSII_SIMILAR_SIZE), also pass facts
+    if peer_set.key == "eu_osii_similar_size":
+        return resolve_peer_set(peer_set, load_banks(), facts=load_facts())
+    return resolve_peer_set(peer_set, load_banks())
 
 
 def peer_display_names(leis: list[str]) -> dict[str, str]:

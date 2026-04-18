@@ -94,74 +94,66 @@ def total_assets(facts: pd.DataFrame) -> pd.DataFrame:
 def cet1_ratio(facts: pd.DataFrame) -> pd.DataFrame:
     """CET1 ratio from K_91.00.
 
-    Attempts to find the row with "CET1" and "ratio/percentage" in the name.
-    Falls back to row 0330 if the search fails. Values should be in the
-    range 0.10-0.25 for typical banks.
+    Computes CET1 capital (row 0010) / TREA, both col 0010.
+    TREA is sourced from K_91.00 row 0270 if available, falling back to
+    K_90.01 row 0030. Values should be in the range 0.10-0.25 for typical banks.
     """
     tpl = Template.TLAC1.value
 
-    # Search for a row containing both "CET1" and "ratio" or "percentage"
-    # First, look for rows that have both CET1 AND ratio/percentage in the name
-    cet1_mask = (
-        (facts["template"] == tpl)
-        & (facts["col_code"] == "0010")
-        & facts["row_name"].fillna("").str.contains("CET1", case=False, regex=False)
+    # CET1 capital amount (row 0010)
+    cet1_amt = _pick(facts, tpl, "0010", "0010").rename(columns={"value": "cet1_amt"})
+
+    # TREA: merge K_91.00 row 0270 and K_90.01 row 0030, preferring K_91.00
+    trea_k91 = _pick(facts, tpl, "0270", "0010").rename(columns={"value": "trea"})
+    trea_k90 = _pick(facts, Template.KM2.value, "0030", "0010").rename(columns={"value": "trea"})
+
+    # Outer union and backfill: K_91.00 takes precedence
+    trea = trea_k91.merge(
+        trea_k90, on=["entity_lei", "reference_date"], how="outer", suffixes=("", "_k90")
     )
-    cet1_candidates = facts.loc[cet1_mask, ["row_code", "row_name"]].drop_duplicates()
+    trea["trea"] = trea["trea"].fillna(trea["trea_k90"])
+    trea = trea[["entity_lei", "reference_date", "trea"]]
 
-    # Filter to rows that explicitly mention ratio or percentage
-    ratio_candidates = cet1_candidates[
-        cet1_candidates["row_name"].str.contains("ratio|percentage", case=False, regex=True)
-    ]
+    if cet1_amt.empty or trea.empty:
+        return pd.DataFrame(columns=["entity_lei", "reference_date", "cet1_ratio"])
 
-    if not ratio_candidates.empty:
-        # Pick the first match (usually the main CET1 ratio)
-        row_code = ratio_candidates.iloc[0]["row_code"]
-    else:
-        # Fallback to row 0330 (the traditional location)
-        row_code = "0330"
-
-    return _pick(facts, tpl, row_code, "0010").rename(
-        columns={"value": "cet1_ratio"}
-    )
+    merged = cet1_amt.merge(trea, on=["entity_lei", "reference_date"], how="inner")
+    merged["cet1_ratio"] = merged["cet1_amt"] / merged["trea"].replace(0, pd.NA)
+    return merged[["entity_lei", "reference_date", "cet1_ratio"]]
 
 
 def t1_capital_ratio(facts: pd.DataFrame) -> pd.DataFrame:
     """Tier 1 capital ratio from K_91.00.
 
-    Searches for a row with "Tier 1" and "ratio/percentage" in the name.
-    If not found, computes Tier1 / TREA ratio instead.
+    Tier 1 = CET1 (row 0010) + AT1 (row 0020). Divided by TREA from
+    K_91.00 row 0270 if available, falling back to K_90.01 row 0030.
+    Expected range: 0.10-0.20 (10%-20%) for typical European banks.
     """
     tpl = Template.TLAC1.value
 
-    # Search for Tier 1 ratio row
-    mask = (
-        (facts["template"] == tpl)
-        & (facts["col_code"] == "0010")
-        & facts["row_name"].fillna("").str.contains("Tier 1|T1", case=False, regex=False)
+    # Tier 1 capital = CET1 + AT1
+    cet1 = _pick(facts, tpl, "0010", "0010").rename(columns={"value": "cet1"})
+    at1 = _pick(facts, tpl, "0020", "0010").rename(columns={"value": "at1"})
+
+    # TREA: merge K_91.00 row 0270 and K_90.01 row 0030, preferring K_91.00
+    trea_k91 = _pick(facts, tpl, "0270", "0010").rename(columns={"value": "trea"})
+    trea_k90 = _pick(facts, Template.KM2.value, "0030", "0010").rename(columns={"value": "trea"})
+
+    trea = trea_k91.merge(
+        trea_k90, on=["entity_lei", "reference_date"], how="outer", suffixes=("", "_k90")
     )
-    candidates = facts.loc[mask, ["row_code", "row_name"]].drop_duplicates()
+    trea["trea"] = trea["trea"].fillna(trea["trea_k90"])
+    trea = trea[["entity_lei", "reference_date", "trea"]]
 
-    # Prefer rows with "ratio" or "percentage"
-    ratio_candidates = candidates[
-        candidates["row_name"].str.contains("ratio|percentage", case=False, regex=True)
-    ]
-
-    if not ratio_candidates.empty:
-        row_code = ratio_candidates.iloc[0]["row_code"]
-        return _pick(facts, tpl, row_code, "0010").rename(
-            columns={"value": "t1_capital_ratio"}
-        )
-
-    # Fallback: compute Tier1 / TREA
-    # Tier 1 capital is typically row 0020 in K_91.00
-    tier1 = _pick(facts, tpl, "0020", "0010").rename(columns={"value": "tier1"})
-    trea = _pick(facts, Template.KM2.value, "0030", "0010").rename(columns={"value": "trea"})
-
-    if tier1.empty or trea.empty:
+    if cet1.empty or trea.empty:
         return pd.DataFrame(columns=["entity_lei", "reference_date", "t1_capital_ratio"])
 
-    merged = tier1.merge(trea, on=["entity_lei", "reference_date"], how="inner")
+    # Outer-merge CET1 + AT1, treating missing AT1 as 0 only when CET1 present
+    merged = cet1.merge(at1, on=["entity_lei", "reference_date"], how="left")
+    merged["at1"] = merged["at1"].fillna(0)
+    merged["tier1"] = merged["cet1"] + merged["at1"]
+
+    merged = merged.merge(trea, on=["entity_lei", "reference_date"], how="inner")
     merged["t1_capital_ratio"] = merged["tier1"] / merged["trea"].replace(0, pd.NA)
     return merged[["entity_lei", "reference_date", "t1_capital_ratio"]]
 
@@ -169,35 +161,28 @@ def t1_capital_ratio(facts: pd.DataFrame) -> pd.DataFrame:
 def total_capital_ratio(facts: pd.DataFrame) -> pd.DataFrame:
     """Total capital ratio from K_91.00.
 
-    Searches for a row with "Total capital" and "ratio/percentage" in the name.
-    If not found, computes (CET1 + AT1 + T2) / TREA instead.
+    Computes (CET1 + AT1 + T2) / TREA, where:
+    - CET1 = row 0010 col 0010
+    - AT1 = row 0020 col 0010
+    - T2 = row 0060 col 0010
+    - TREA from K_91.00 row 0270 if available, falling back to K_90.01 row 0030
+    Values should be in the range 0.15-0.25 for typical banks.
     """
     tpl = Template.TLAC1.value
 
-    # Search for total capital ratio row
-    mask = (
-        (facts["template"] == tpl)
-        & (facts["col_code"] == "0010")
-        & facts["row_name"].fillna("").str.contains("total capital", case=False, regex=False)
-    )
-    candidates = facts.loc[mask, ["row_code", "row_name"]].drop_duplicates()
-
-    # Prefer rows with "ratio" or "percentage"
-    ratio_candidates = candidates[
-        candidates["row_name"].str.contains("ratio|percentage", case=False, regex=True)
-    ]
-
-    if not ratio_candidates.empty:
-        row_code = ratio_candidates.iloc[0]["row_code"]
-        return _pick(facts, tpl, row_code, "0010").rename(
-            columns={"value": "total_capital_ratio"}
-        )
-
-    # Fallback: compute (CET1 + AT1 + T2) / TREA
+    # Fetch all capital components
     cet1_amt = _pick(facts, tpl, "0010", "0010").rename(columns={"value": "cet1_amt"})
     at1_amt = _pick(facts, tpl, "0020", "0010").rename(columns={"value": "at1_amt"})
     t2_amt = _pick(facts, tpl, "0060", "0010").rename(columns={"value": "t2_amt"})
-    trea = _pick(facts, Template.KM2.value, "0030", "0010").rename(columns={"value": "trea"})
+
+    # TREA: merge K_91.00 row 0270 and K_90.01 row 0030, preferring K_91.00
+    trea_k91 = _pick(facts, tpl, "0270", "0010").rename(columns={"value": "trea"})
+    trea_k90 = _pick(facts, Template.KM2.value, "0030", "0010").rename(columns={"value": "trea"})
+    trea = trea_k91.merge(
+        trea_k90, on=["entity_lei", "reference_date"], how="outer", suffixes=("", "_k90")
+    )
+    trea["trea"] = trea["trea"].fillna(trea["trea_k90"])
+    trea = trea[["entity_lei", "reference_date", "trea"]]
 
     if cet1_amt.empty or trea.empty:
         return pd.DataFrame(columns=["entity_lei", "reference_date", "total_capital_ratio"])
@@ -220,35 +205,36 @@ def total_capital_ratio(facts: pd.DataFrame) -> pd.DataFrame:
 
 
 def leverage_ratio(facts: pd.DataFrame) -> pd.DataFrame:
-    """Leverage ratio (Tier 1 / TEM).
+    """Leverage ratio = Tier 1 / TEM.
 
-    Searches for a direct leverage ratio metric in K_91.00 first.
-    If not found, computes Tier 1 / TEM as a proxy.
+    Tier 1 = CET1 (row 0010) + AT1 (row 0020). TEM is sourced from
+    K_91.00 row 0280 if available, falling back to K_90.01 row 0060.
+    Expected range: 0.04-0.08 (4%-8%) for typical European banks.
     """
     tpl = Template.TLAC1.value
 
-    # Search for leverage ratio row
-    mask = (
-        (facts["template"] == tpl)
-        & (facts["col_code"] == "0010")
-        & facts["row_name"].fillna("").str.contains("leverage", case=False, regex=False)
+    # Tier 1 capital = CET1 + AT1
+    cet1 = _pick(facts, tpl, "0010", "0010").rename(columns={"value": "cet1"})
+    at1 = _pick(facts, tpl, "0020", "0010").rename(columns={"value": "at1"})
+
+    # TEM: merge K_91.00 row 0280 and K_90.01 row 0060, preferring K_91.00
+    tem_k91 = _pick(facts, tpl, "0280", "0010").rename(columns={"value": "tem"})
+    tem_k90 = _pick(facts, Template.KM2.value, "0060", "0010").rename(columns={"value": "tem"})
+
+    tem = tem_k91.merge(
+        tem_k90, on=["entity_lei", "reference_date"], how="outer", suffixes=("", "_k90")
     )
-    candidates = facts.loc[mask, ["row_code", "row_name"]].drop_duplicates()
+    tem["tem"] = tem["tem"].fillna(tem["tem_k90"])
+    tem = tem[["entity_lei", "reference_date", "tem"]]
 
-    if not candidates.empty:
-        row_code = candidates.iloc[0]["row_code"]
-        return _pick(facts, tpl, row_code, "0010").rename(
-            columns={"value": "leverage_ratio"}
-        )
-
-    # Fallback: compute Tier1 / TEM
-    tier1 = _pick(facts, tpl, "0020", "0010").rename(columns={"value": "tier1"})
-    tem = _pick(facts, Template.KM2.value, "0060", "0010").rename(columns={"value": "tem"})
-
-    if tier1.empty or tem.empty:
+    if cet1.empty or tem.empty:
         return pd.DataFrame(columns=["entity_lei", "reference_date", "leverage_ratio"])
 
-    merged = tier1.merge(tem, on=["entity_lei", "reference_date"], how="inner")
+    merged = cet1.merge(at1, on=["entity_lei", "reference_date"], how="left")
+    merged["at1"] = merged["at1"].fillna(0)
+    merged["tier1"] = merged["cet1"] + merged["at1"]
+
+    merged = merged.merge(tem, on=["entity_lei", "reference_date"], how="inner")
     merged["leverage_ratio"] = merged["tier1"] / merged["tem"].replace(0, pd.NA)
     return merged[["entity_lei", "reference_date", "leverage_ratio"]]
 

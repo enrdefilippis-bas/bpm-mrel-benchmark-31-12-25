@@ -45,6 +45,7 @@ class Source(str, Enum):
     PDF_BBVA = "pdf-bbva"
     PDF_CREDIT_AGRICOLE = "pdf-credit-agricole"
     PDF_SOCGEN = "pdf-socgen"
+    P3_DATAHUB = "p3-datahub"
 
 
 # Column names — one source of truth. Use these everywhere.

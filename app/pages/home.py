@@ -43,6 +43,10 @@ TILE_SPECS: Final[list[tuple[str, str, bool]]] = [
     ("mrel_requirement_trea", "/cushion", False),
     ("mrel_total_amount", "/composition", False),
     ("trea", "/outliers", False),
+    ("total_assets", "/outliers", False),
+    ("cet1_ratio", "/outliers", False),
+    ("total_capital_ratio", "/outliers", False),
+    ("leverage_ratio", "/outliers", False),
 ]
 
 
@@ -50,7 +54,8 @@ TILE_SPECS: Final[list[tuple[str, str, bool]]] = [
 HERO_METRIC_OPTIONS = [
     {"label": get_caption(k).label, "value": k}
     for k in ("mrel_pct_trea", "mrel_pct_tem", "subord_pct_trea",
-              "mrel_surplus_trea_pp", "subordination_ratio")
+              "mrel_surplus_trea_pp", "subordination_ratio",
+              "cet1_ratio", "total_capital_ratio", "leverage_ratio", "total_assets")
 ]
 
 
