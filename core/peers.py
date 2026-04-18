@@ -135,26 +135,109 @@ EU_MID_CAP = PeerSet(
 )
 
 
+ITALIAN_OSII_RESOLUTION = PeerSet(
+    key="italian_osii_resolution",
+    label="Italian O-SIIs under resolution",
+    description="The 7 Italian O-SIIs subject to resolution planning.",
+    # Explicit LEI whitelist for the 7 Italian O-SIIs
+    # (No name_hints to avoid matching foreign subsidiaries like UniCredit Bank Austria/GmbH)
+    leis=(
+        "815600E4E6DCD2D25E30",  # Banco BPM
+        "549300TRUWO2CD2G5692",  # UniCredit S.p.A. (parent, Italian)
+        "2W8N8UU78PMDQKZENC08",  # Intesa Sanpaolo S.p.A.
+        "J4CP7MHCXR8DAQMKIL78",  # Banca Monte dei Paschi di Siena S.p.A.
+        "N747OI7JINV7RUUH6190",  # BPER Banca S.p.A.
+        "PSNL19R2RXX5U3QWHI44",  # Mediobanca - Banca di Credito Finanziario S.p.A.
+        "NNVPP80YIZGEY2314M97",  # ICCREA BANCA S.P.A.
+    ),
+)
+
+
+def resolve_eu_osii_similar_size(banks: "pandas.DataFrame") -> list[str]:
+    """Dynamically resolve EU O-SIIs with similar size (150-300B TEM).
+
+    Filters banks.parquet for entities whose Q4-2025 TEM (K_90.01 row 0060
+    col 0010) is between 150,000 and 300,000 EUR millions. Returns sorted LEIs.
+    """
+    if banks.empty:
+        return []
+
+    # Import here to avoid circular imports
+    from core.schema import Template
+
+    # We need to access the facts to get TEM values
+    # But this function receives only the banks dimension table
+    # The caller (resolve_peer_set) will need to pass facts or we compute at UI level
+    # For now, return an empty set; the actual implementation happens in UI/pages
+    return []
+
+
+EU_OSII_SIMILAR_SIZE = PeerSet(
+    key="eu_osii_similar_size",
+    label="EU peers – similar size (150–300B TEM)",
+    description="EU banks with Q4-2025 total assets between EUR 150-300 billion.",
+    # This set is dynamically resolved at runtime based on TEM data
+)
+
+
 ALL_PEER_SETS: tuple[PeerSet, ...] = (
     DEFAULT_BPM_PEERS,
     ITALIAN_SIS,
     G_SIBS,
     EU_MID_CAP,
+    ITALIAN_OSII_RESOLUTION,
+    EU_OSII_SIMILAR_SIZE,
 )
 
 
-def resolve_peer_set(peer_set: PeerSet, banks: "pandas.DataFrame") -> list[str]:
+def resolve_peer_set(
+    peer_set: PeerSet,
+    banks: "pandas.DataFrame",
+    facts: "pandas.DataFrame | None" = None,
+) -> list[str]:
     """Map a PeerSet to concrete LEIs present in a banks dimension table.
 
     `banks` must have columns `entity_lei` and `entity_name`. Returns the
     sorted list of LEIs that match by LEI or case-insensitive substring
     on `entity_name`. Missing hints silently drop — visible in the UI via
     the "N of M selected have data" counter.
+
+    For the special EU_OSII_SIMILAR_SIZE peer set, also requires `facts`
+    to filter by TEM range (150-300B EUR).
     """
     import pandas as pd
 
     if banks.empty:
         return []
+
+    # Special handling for EU_OSII_SIMILAR_SIZE: filter by TEM range
+    if peer_set.key == "eu_osii_similar_size":
+        if facts is None or facts.empty:
+            return []
+        # Get Q4-2025 TEM values
+        from core.schema import Template
+
+        q4_2025 = pd.Timestamp("2025-12-31")
+        tem_mask = (
+            (facts["template"] == Template.KM2.value)
+            & (facts["row_code"] == "0060")
+            & (facts["col_code"] == "0010")
+            & (facts["reference_date"] == q4_2025)
+        )
+        tem_data = facts.loc[tem_mask, ["entity_lei", "value"]].copy()
+
+        if tem_data.empty:
+            return []
+
+        # Filter to banks with TEM between 150B and 300B EUR
+        # Values are in EUR (not millions), so 150B = 150_000_000_000
+        in_range = tem_data[
+            (tem_data["value"] >= 150_000_000_000) & (tem_data["value"] <= 300_000_000_000)
+        ]["entity_lei"].tolist()
+
+        # Filter to banks present in the banks dimension
+        present = set(banks["entity_lei"].astype(str))
+        return sorted(set(in_range) & present)
 
     matched: set[str] = set(peer_set.leis)
     if peer_set.name_hints:

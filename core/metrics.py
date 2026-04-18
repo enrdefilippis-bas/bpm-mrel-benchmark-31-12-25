@@ -79,6 +79,180 @@ def available_metric_keys() -> list[str]:
     return list(METRIC_CAPTIONS)
 
 
+# ---- New solvency and capital metrics ----
+
+def total_assets(facts: pd.DataFrame) -> pd.DataFrame:
+    """Total assets (TEM) from K_90.01 row 0060 col 0010.
+
+    Returns EUR (absolute value, as reported in the EBA export).
+    """
+    return _pick(facts, Template.KM2.value, "0060", "0010").rename(
+        columns={"value": "total_assets"}
+    )
+
+
+def cet1_ratio(facts: pd.DataFrame) -> pd.DataFrame:
+    """CET1 ratio from K_91.00.
+
+    Attempts to find the row with "CET1" and "ratio/percentage" in the name.
+    Falls back to row 0330 if the search fails. Values should be in the
+    range 0.10-0.25 for typical banks.
+    """
+    tpl = Template.TLAC1.value
+
+    # Search for a row containing both "CET1" and "ratio" or "percentage"
+    # First, look for rows that have both CET1 AND ratio/percentage in the name
+    cet1_mask = (
+        (facts["template"] == tpl)
+        & (facts["col_code"] == "0010")
+        & facts["row_name"].fillna("").str.contains("CET1", case=False, regex=False)
+    )
+    cet1_candidates = facts.loc[cet1_mask, ["row_code", "row_name"]].drop_duplicates()
+
+    # Filter to rows that explicitly mention ratio or percentage
+    ratio_candidates = cet1_candidates[
+        cet1_candidates["row_name"].str.contains("ratio|percentage", case=False, regex=True)
+    ]
+
+    if not ratio_candidates.empty:
+        # Pick the first match (usually the main CET1 ratio)
+        row_code = ratio_candidates.iloc[0]["row_code"]
+    else:
+        # Fallback to row 0330 (the traditional location)
+        row_code = "0330"
+
+    return _pick(facts, tpl, row_code, "0010").rename(
+        columns={"value": "cet1_ratio"}
+    )
+
+
+def t1_capital_ratio(facts: pd.DataFrame) -> pd.DataFrame:
+    """Tier 1 capital ratio from K_91.00.
+
+    Searches for a row with "Tier 1" and "ratio/percentage" in the name.
+    If not found, computes Tier1 / TREA ratio instead.
+    """
+    tpl = Template.TLAC1.value
+
+    # Search for Tier 1 ratio row
+    mask = (
+        (facts["template"] == tpl)
+        & (facts["col_code"] == "0010")
+        & facts["row_name"].fillna("").str.contains("Tier 1|T1", case=False, regex=False)
+    )
+    candidates = facts.loc[mask, ["row_code", "row_name"]].drop_duplicates()
+
+    # Prefer rows with "ratio" or "percentage"
+    ratio_candidates = candidates[
+        candidates["row_name"].str.contains("ratio|percentage", case=False, regex=True)
+    ]
+
+    if not ratio_candidates.empty:
+        row_code = ratio_candidates.iloc[0]["row_code"]
+        return _pick(facts, tpl, row_code, "0010").rename(
+            columns={"value": "t1_capital_ratio"}
+        )
+
+    # Fallback: compute Tier1 / TREA
+    # Tier 1 capital is typically row 0020 in K_91.00
+    tier1 = _pick(facts, tpl, "0020", "0010").rename(columns={"value": "tier1"})
+    trea = _pick(facts, Template.KM2.value, "0030", "0010").rename(columns={"value": "trea"})
+
+    if tier1.empty or trea.empty:
+        return pd.DataFrame(columns=["entity_lei", "reference_date", "t1_capital_ratio"])
+
+    merged = tier1.merge(trea, on=["entity_lei", "reference_date"], how="inner")
+    merged["t1_capital_ratio"] = merged["tier1"] / merged["trea"].replace(0, pd.NA)
+    return merged[["entity_lei", "reference_date", "t1_capital_ratio"]]
+
+
+def total_capital_ratio(facts: pd.DataFrame) -> pd.DataFrame:
+    """Total capital ratio from K_91.00.
+
+    Searches for a row with "Total capital" and "ratio/percentage" in the name.
+    If not found, computes (CET1 + AT1 + T2) / TREA instead.
+    """
+    tpl = Template.TLAC1.value
+
+    # Search for total capital ratio row
+    mask = (
+        (facts["template"] == tpl)
+        & (facts["col_code"] == "0010")
+        & facts["row_name"].fillna("").str.contains("total capital", case=False, regex=False)
+    )
+    candidates = facts.loc[mask, ["row_code", "row_name"]].drop_duplicates()
+
+    # Prefer rows with "ratio" or "percentage"
+    ratio_candidates = candidates[
+        candidates["row_name"].str.contains("ratio|percentage", case=False, regex=True)
+    ]
+
+    if not ratio_candidates.empty:
+        row_code = ratio_candidates.iloc[0]["row_code"]
+        return _pick(facts, tpl, row_code, "0010").rename(
+            columns={"value": "total_capital_ratio"}
+        )
+
+    # Fallback: compute (CET1 + AT1 + T2) / TREA
+    cet1_amt = _pick(facts, tpl, "0010", "0010").rename(columns={"value": "cet1_amt"})
+    at1_amt = _pick(facts, tpl, "0020", "0010").rename(columns={"value": "at1_amt"})
+    t2_amt = _pick(facts, tpl, "0060", "0010").rename(columns={"value": "t2_amt"})
+    trea = _pick(facts, Template.KM2.value, "0030", "0010").rename(columns={"value": "trea"})
+
+    if cet1_amt.empty or trea.empty:
+        return pd.DataFrame(columns=["entity_lei", "reference_date", "total_capital_ratio"])
+
+    # Merge all components
+    merged = cet1_amt
+    for df, col in [(at1_amt, "at1_amt"), (t2_amt, "t2_amt"), (trea, "trea")]:
+        merged = merged.merge(df, on=["entity_lei", "reference_date"], how="outer")
+
+    # Sum capital components (treat missing as 0 only when at least one is present)
+    class_cols = ["cet1_amt", "at1_amt", "t2_amt"]
+    any_present = merged[class_cols].notna().any(axis=1)
+    merged["total_capital"] = merged[class_cols].sum(axis=1, min_count=1)
+
+    # Compute ratio
+    merged["total_capital_ratio"] = (
+        merged["total_capital"] / merged["trea"].replace(0, pd.NA)
+    )
+    return merged[["entity_lei", "reference_date", "total_capital_ratio"]].loc[any_present]
+
+
+def leverage_ratio(facts: pd.DataFrame) -> pd.DataFrame:
+    """Leverage ratio (Tier 1 / TEM).
+
+    Searches for a direct leverage ratio metric in K_91.00 first.
+    If not found, computes Tier 1 / TEM as a proxy.
+    """
+    tpl = Template.TLAC1.value
+
+    # Search for leverage ratio row
+    mask = (
+        (facts["template"] == tpl)
+        & (facts["col_code"] == "0010")
+        & facts["row_name"].fillna("").str.contains("leverage", case=False, regex=False)
+    )
+    candidates = facts.loc[mask, ["row_code", "row_name"]].drop_duplicates()
+
+    if not candidates.empty:
+        row_code = candidates.iloc[0]["row_code"]
+        return _pick(facts, tpl, row_code, "0010").rename(
+            columns={"value": "leverage_ratio"}
+        )
+
+    # Fallback: compute Tier1 / TEM
+    tier1 = _pick(facts, tpl, "0020", "0010").rename(columns={"value": "tier1"})
+    tem = _pick(facts, Template.KM2.value, "0060", "0010").rename(columns={"value": "tem"})
+
+    if tier1.empty or tem.empty:
+        return pd.DataFrame(columns=["entity_lei", "reference_date", "leverage_ratio"])
+
+    merged = tier1.merge(tem, on=["entity_lei", "reference_date"], how="inner")
+    merged["leverage_ratio"] = merged["tier1"] / merged["tem"].replace(0, pd.NA)
+    return merged[["entity_lei", "reference_date", "leverage_ratio"]]
+
+
 # ---- TLAC1 composition ----
 
 # Five instrument classes used on the composition page.
