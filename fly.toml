@@ -2,7 +2,6 @@ app = "mrel-peer-benchmark"
 primary_region = "fra"
 
 [build]
-  builder = "pacer"
   dockerfile = "Dockerfile"
 
 [env]
