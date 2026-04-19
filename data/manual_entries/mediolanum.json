@@ -1,0 +1,34 @@
+{
+  "entity_name": "BANCA MEDIOLANUM S.P.A.",
+  "source_pdf": "https://www.bancamediolanum.it/static-assets/documenti/file/it/2026/04/07//Informativa_al_pubblico_311225.pdf",
+  "notes": "Ratios as decimals (0.2492 = 24.92%). Amounts in EUR (converted from thousands in PDF). Extracted from Pillar 3 as at 31.12.2025 (Italian language PDF, 232 pages). No subordination requirement. CET1 ratio 23.0% (press release).",
+  "reference_dates": {
+    "2025-12-31": {
+      "km2": {
+        "mrel_total_amount":            4157653000,
+        "trea":                         16681605000,
+        "tem":                          40504981000,
+        "mrel_pct_trea":                0.2492,
+        "subord_pct_trea":              0.2304,
+        "mrel_pct_tem":                 0.1026,
+        "subord_pct_tem":               0.0949,
+        "mrel_requirement_trea":        0.1885,
+        "mrel_subord_requirement_trea": null,
+        "mrel_requirement_tem":         0.0527,
+        "mrel_subord_requirement_tem":  null
+      },
+      "tlac1": {
+        "cet1":                  3843529000,
+        "at1":                   0,
+        "tier2":                 0,
+        "subord_own_issuance":   0,
+        "subord_intra_group":    0,
+        "subord_grandfathered":  0,
+        "subord_t2_residual":    0,
+        "senior_pre_cap":        314125000,
+        "senior_grandfathered":  0,
+        "senior_post_cap":       314125000
+      }
+    }
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "entity_name": "CREDITO EMILIANO HOLDING SOCIETA' PER AZIONI",
+  "source_pdf": "Press release FY2025 results",
+  "notes": "Ratios as decimals. Partial data from FY2025 press release. Pillar 3 Q4 2025 not yet published. MREL pct_trea computed as requirement (20.72%) + buffer (6.89%) = 27.61%. CET1 ratio 16.99% (group), T1 16.12%, TC 18.34%.",
+  "reference_dates": {
+    "2025-12-31": {
+      "km2": {
+        "mrel_total_amount":            null,
+        "trea":                         null,
+        "tem":                          null,
+        "mrel_pct_trea":                0.2761,
+        "subord_pct_trea":              null,
+        "mrel_pct_tem":                 null,
+        "subord_pct_tem":               null,
+        "mrel_requirement_trea":        0.2072,
+        "mrel_subord_requirement_trea": null,
+        "mrel_requirement_tem":         0.0591,
+        "mrel_subord_requirement_tem":  null
+      },
+      "tlac1": {
+        "cet1":                  null,
+        "at1":                   null,
+        "tier2":                 null,
+        "subord_own_issuance":   null,
+        "subord_intra_group":    null,
+        "subord_grandfathered":  null,
+        "subord_t2_residual":    null,
+        "senior_pre_cap":        null,
+        "senior_grandfathered":  null,
+        "senior_post_cap":       null
+      }
+    }
+  }
+}

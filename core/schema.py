@@ -45,6 +45,13 @@ class Source(str, Enum):
     PDF_BBVA = "pdf-bbva"
     PDF_CREDIT_AGRICOLE = "pdf-credit-agricole"
     PDF_SOCGEN = "pdf-socgen"
+    PDF_MPS = "pdf-mps"
+    PDF_MEDIOBANCA = "pdf-mediobanca"
+    PDF_BPER = "pdf-bper"
+    PDF_CREDEM = "pdf-credem"
+    PDF_MEDIOLANUM = "pdf-mediolanum"
+    PDF_ICCREA = "pdf-iccrea"
+    PDF_CASSA_CENTRALE = "pdf-cassa-centrale"
     P3_DATAHUB = "p3-datahub"
 
 

@@ -1,0 +1,34 @@
+{
+  "entity_name": "Mediobanca - Banca di Credito Finanziario S.p.A.",
+  "source_pdf": "https://www.mediobanca.com/static/upload_new/pil/pillar3_dicembre25_eng1.pdf",
+  "notes": "Ratios as decimals (0.4304 = 43.04%). Amounts in EUR (converted from thousands in PDF). Extracted from Pillar 3 as at 31.12.2025 (English language PDF, 280 pages). MREL requirement rows EU-7 to EU-10 are blank in Pillar 3 (Mediobanca has no standalone MREL target following MPS acquisition).",
+  "reference_dates": {
+    "2025-12-31": {
+      "km2": {
+        "mrel_total_amount":            19742385000,
+        "trea":                         45866792000,
+        "tem":                          104021873000,
+        "mrel_pct_trea":                0.4304,
+        "subord_pct_trea":              0.2194,
+        "mrel_pct_tem":                 0.1898,
+        "subord_pct_tem":               0.0968,
+        "mrel_requirement_trea":        null,
+        "mrel_subord_requirement_trea": null,
+        "mrel_requirement_tem":         null,
+        "mrel_subord_requirement_tem":  null
+      },
+      "tlac1": {
+        "cet1":                  7536395000,
+        "at1":                   0,
+        "tier2":                 1030337000,
+        "subord_own_issuance":   1529620000,
+        "subord_intra_group":    0,
+        "subord_grandfathered":  0,
+        "subord_t2_residual":    17900000,
+        "senior_pre_cap":        9830551000,
+        "senior_grandfathered":  0,
+        "senior_post_cap":       9830551000
+      }
+    }
+  }
+}

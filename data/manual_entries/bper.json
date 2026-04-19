@@ -1,0 +1,34 @@
+{
+  "entity_name": "BPER Banca S.p.A.",
+  "source_pdf": "https://group.bper.it/documents/133577364/2799448621/26.02.05+BPER+Risultati+2025+ITA.pdf",
+  "notes": "Ratios as decimals. Amounts in EUR. Partial data from FY2025 press release (26 Feb 2026). Pillar 3 Q4 2025 not yet published. Total assets 204.6B include Banca Popolare di Sondrio. TREA estimated from CET1 ratio footnote. Absolute amounts are approximations.",
+  "reference_dates": {
+    "2025-12-31": {
+      "km2": {
+        "mrel_total_amount":            null,
+        "trea":                         null,
+        "tem":                          null,
+        "mrel_pct_trea":                0.2735,
+        "subord_pct_trea":              0.2107,
+        "mrel_pct_tem":                 null,
+        "subord_pct_tem":               null,
+        "mrel_requirement_trea":        0.2546,
+        "mrel_subord_requirement_trea": 0.1860,
+        "mrel_requirement_tem":         0.0652,
+        "mrel_subord_requirement_tem":  0.0652
+      },
+      "tlac1": {
+        "cet1":                  null,
+        "at1":                   null,
+        "tier2":                 null,
+        "subord_own_issuance":   null,
+        "subord_intra_group":    null,
+        "subord_grandfathered":  null,
+        "subord_t2_residual":    null,
+        "senior_pre_cap":        null,
+        "senior_grandfathered":  null,
+        "senior_post_cap":       null
+      }
+    }
+  }
+}
