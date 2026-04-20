@@ -165,6 +165,71 @@ METRIC_CAPTIONS: dict[str, MetricCaption] = {
         sources=("K_91.00 c0010", "K_90.01 r0060 c0010"),
         description="Tier 1 capital as a percentage of TEM (leverage-ratio denominator).",
     ),
+    "cbr_pct_trea": MetricCaption(
+        key="cbr_pct_trea",
+        label="Combined Buffer Requirement (% of TREA)",
+        short_label="CBR % TREA",
+        unit="%",
+        formula="Per-bank disclosure (Pillar 3 narrative) — core.cbr.lookup_cbr",
+        sources=("Pillar 3 PDF (narrative)",),
+        description=(
+            "Combined Buffer Requirement applicable on top of Pillar 1 + Pillar 2R, "
+            "sourced from each bank's narrative Pillar 3 disclosure. NOT from EBA "
+            "export row 0160 (which is absent for every bank in the 2025 release)."
+        ),
+    ),
+    "mrel_requirement_trea_ex_cbr": MetricCaption(
+        key="mrel_requirement_trea_ex_cbr",
+        label="MREL requirement ex-CBR (% of TREA)",
+        short_label="MREL req ex-CBR",
+        unit="%",
+        formula="req − CBR (if bank discloses INCLUDED) else req (ON_TOP)",
+        sources=("K_90.01 r0120 c0010", "Pillar 3 PDF (narrative)"),
+        description=(
+            "Binding MREL-TREA requirement normalized to an EX-CBR base so all "
+            "peers are comparable. The KM2 filing default is on_top (excludes CBR); "
+            "for banks that disclose the figure already inclusive of CBR "
+            "(e.g. Mediobanca, Iccrea) we subtract CBR to align."
+        ),
+    ),
+    "mrel_requirement_trea_with_cbr": MetricCaption(
+        key="mrel_requirement_trea_with_cbr",
+        label="MREL requirement + CBR (% of TREA)",
+        short_label="MREL req + CBR",
+        unit="%",
+        formula="req_ex_cbr + CBR",
+        sources=("K_90.01 r0120 c0010", "Pillar 3 PDF (narrative)"),
+        description=(
+            "Overall MREL threshold (OCR-equivalent) below which the bank would "
+            "face M-MDA / distribution restrictions. This is the 'real' bar a "
+            "bank must clear, not the narrow MREL figure."
+        ),
+    ),
+    "mrel_surplus_trea_ex_cbr_pp": MetricCaption(
+        key="mrel_surplus_trea_ex_cbr_pp",
+        label="Cushion vs MREL (ex-CBR, TREA)",
+        short_label="Cushion vs MREL",
+        unit="pp",
+        formula="mrel_pct_trea − mrel_requirement_trea_ex_cbr",
+        sources=("K_90.01 r0040 c0010", "K_90.01 r0120 c0010"),
+        description=(
+            "Capacity minus the MREL-only requirement (excluding CBR). "
+            "Matches the 'cushion' figure most banks cite in their own decks."
+        ),
+    ),
+    "mrel_surplus_trea_with_cbr_pp": MetricCaption(
+        key="mrel_surplus_trea_with_cbr_pp",
+        label="Cushion vs OCR (MREL + CBR, TREA)",
+        short_label="Cushion vs OCR",
+        unit="pp",
+        formula="mrel_pct_trea − mrel_requirement_trea_with_cbr",
+        sources=("K_90.01 r0040 c0010", "K_90.01 r0120 c0010", "Pillar 3 PDF"),
+        description=(
+            "Capacity minus the overall threshold (MREL + CBR). Negative = "
+            "the bank would face M-MDA restrictions; positive = full distribution "
+            "flexibility. Stricter, more economically meaningful cushion."
+        ),
+    ),
 }
 
 

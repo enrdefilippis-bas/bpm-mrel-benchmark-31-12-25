@@ -1,7 +1,7 @@
 {
   "entity_name": "ICCREA BANCA S.P.A.",
-  "source_pdf": "Press release FY2025 results + SRB MREL decision",
-  "notes": "Ratios as decimals. Partial data from FY2025 press release (Feb 2026) and SRB MREL decision (Mar 2025). Pillar 3 Q4 2025 not yet published. CET1 ratio 26.0%, TC ratio 26.4%. MREL requirement 26.03% TREA excl. CBR.",
+  "source_pdf": "Press release FY2025 results + SRB MREL decision + Pillar 3 30-06-2025 p.40",
+  "notes": "Ratios as decimals. Partial data from FY2025 press release (Feb 2026) and SRB MREL decision (Mar 2025). Pillar 3 Q4 2025 not yet published. CET1 ratio 26.0%, TC ratio 26.4%. IMPORTANT: Iccrea publishes the MREL-TREA requirement INCLUDING CBR (see Pillar 3 30-06-2025 p.40: '26,03% degli RWA comprensivo del requisito di riserva combinata di capitale pari a 3,59% degli RWA'). We store the figure as-disclosed (26.03%); the CBR treatment + decomposition live in core/cbr.py, which normalizes to an EX-CBR base of 22.44%.",
   "reference_dates": {
     "2025-12-31": {
       "km2": {

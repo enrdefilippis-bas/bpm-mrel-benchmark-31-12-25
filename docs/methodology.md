@@ -46,6 +46,78 @@ ratios, also in decimal form.
 `mrel_surplus_trea_pp > 0` means the bank has a cushion above the binding
 MREL requirement. Implementation: `core.metrics.km2_wide`.
 
+> **Caveat — naïve cushion.** `mrel_surplus_trea_pp` uses the requirement
+> *as disclosed in KM2 r0120* without normalizing the CBR treatment. For a
+> comparable peer view — and for the M-MDA distance — use the two
+> CBR-aware metrics below.
+
+## Combined Buffer Requirement (CBR) normalization
+
+The EBA cell-level export **does not include CBR** (row 0160 of K_90.01 is
+absent for every bank in the 2025 release). CBR, and the question of
+whether the disclosed MREL-TREA requirement is reported *excluding* or
+*including* CBR, is published only in the narrative body of each bank's
+Pillar 3 PDF. The canonical KM2 filing convention is *excluding* (CBR
+must be met on top), and Banco BPM's Pillar 3 cites this convention
+explicitly. A handful of banks (notably Mediobanca, Iccrea) deviate and
+publish the figure already inclusive of CBR, so a per-bank flag is
+needed to make the requirements comparable.
+
+Implementation: `core.cbr` is the single source of truth.
+`core.cbr.CBR_DISCLOSURES` is a per-`(entity_lei, reference_date)` lookup
+whose entries were sourced from the sibling `mrel-analysis/cbr` scrape
+of Italian Pillar 3 PDFs and from explicit manual footnotes (BBVA). A
+row missing from the lookup falls through to
+`core.cbr.DEFAULT_CBR_ESTIMATE` (`on_top` treatment, 3.5% CBR
+placeholder). The CBR logic is attached to `km2_wide` at the end of
+`core.metrics.km2_wide` via `core.cbr.attach_cbr`.
+
+### Normalization rules
+
+Given `req` (= KM2 `r0120 c0010`), `cbr` (from the lookup) and a
+`treatment` flag:
+
+| Treatment   | `req_ex_cbr`       | `req_with_cbr`     |
+|-------------|--------------------|--------------------|
+| `on_top`    | `req`              | `req + cbr`        |
+| `included`  | `req − cbr`        | `req`              |
+
+When the treatment is declared `unknown`, the breach-test fallback
+(below) decides between `on_top` and `included`.
+
+### Breach-test fallback rule (`core.cbr.infer_cbr_treatment`)
+
+1. If treatment is already `on_top` or `included`, use it.
+2. Otherwise assume the KM2 default (`on_top`) — but if we have all
+   three inputs (`capacity`, `req`, `cbr`) and `capacity < req + cbr`,
+   the bank would be in breach of OCR under the `on_top` reading.
+   A published disclosure of a breach is very unlikely, so the
+   requirement is far more likely to already include CBR.
+   Reclassify as `included`.
+3. If any input is `None`, keep `on_top` (the safe default).
+
+### Derived CBR-aware metrics
+
+| Metric key                            | Formula                                         | Unit |
+|---------------------------------------|-------------------------------------------------|------|
+| `cbr_pct_trea`                        | per-bank lookup (`core.cbr.CBR_DISCLOSURES`)    | %    |
+| `mrel_requirement_trea_ex_cbr`        | `req_ex_cbr` per table above                    | %    |
+| `mrel_requirement_trea_with_cbr`      | `req_with_cbr` per table above (= OCR threshold)| %    |
+| `mrel_surplus_trea_ex_cbr_pp`         | `mrel_pct_trea − mrel_requirement_trea_ex_cbr`  | pp   |
+| `mrel_surplus_trea_with_cbr_pp`       | `mrel_pct_trea − mrel_requirement_trea_with_cbr`| pp   |
+
+`mrel_surplus_trea_ex_cbr_pp` is the cushion *on the comparable MREL-only
+base* (what the BPM KM2 row 0120 shows natively). It is the metric to
+use for peer-to-peer comparability.
+
+`mrel_surplus_trea_with_cbr_pp` is the cushion *vs. the OCR threshold*
+(MREL + CBR) — below zero is an M-MDA breach, so this is the metric
+to use when reasoning about dividend / coupon / bonus restrictions.
+
+Each row also carries `cbr_treatment`, `cbr_is_estimate` and
+`cbr_source` so the UI can caveat the figure when either the treatment
+or the CBR value is an estimate.
+
 ## Composition (TLAC1) — stack by class
 
 The Composition page shows five classes summing to the MREL stack

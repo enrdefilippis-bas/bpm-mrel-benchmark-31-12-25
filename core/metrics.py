@@ -11,6 +11,7 @@ import re
 import pandas as pd
 
 from core.captions import METRIC_CAPTIONS
+from core.cbr import attach_cbr
 from core.schema import Template
 
 
@@ -62,6 +63,12 @@ def km2_wide(facts: pd.DataFrame) -> pd.DataFrame:
     out["subordination_ratio"] = (
         out["subord_pct_trea"] / out["mrel_pct_trea"].replace(0, np.nan)
     )
+
+    # Attach CBR columns + normalized requirement bases. CBR is sourced
+    # from core.cbr (not the EBA export — row 0160 is absent there) and
+    # lets us produce two comparable surpluses: vs MREL nudo (req_ex_cbr)
+    # and vs OCR (req_with_cbr), per user decision.
+    out = attach_cbr(out)
 
     return out
 

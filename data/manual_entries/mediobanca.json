@@ -1,7 +1,7 @@
 {
   "entity_name": "Mediobanca - Banca di Credito Finanziario S.p.A.",
   "source_pdf": "https://www.mediobanca.com/static/upload_new/pil/pillar3_dicembre25_eng1.pdf",
-  "notes": "Ratios as decimals (0.4304 = 43.04%). Amounts in EUR (converted from thousands in PDF). Extracted from Pillar 3 as at 31.12.2025 (English language PDF, 280 pages). MREL requirement rows EU-7 to EU-10 are blank in Pillar 3 (Mediobanca has no standalone MREL target following MPS acquisition).",
+  "notes": "Ratios as decimals (0.4304 = 43.04%). Amounts in EUR (converted from thousands in PDF). Extracted from Pillar 3 as at 31.12.2025 (English language PDF, 280 pages). KM2 requirement rows EU-7 to EU-10 are blank in the template because Mediobanca reports no standalone MREL-TREA target in that table — but the narrative body (p.63) discloses MREL-TREA = 24.44% inclusive of CBR, so we carry that forward as mrel_requirement_trea with cbr_treatment=included in core.cbr.",
   "reference_dates": {
     "2025-12-31": {
       "km2": {
@@ -12,7 +12,7 @@
         "subord_pct_trea":              0.2194,
         "mrel_pct_tem":                 0.1898,
         "subord_pct_tem":               0.0968,
-        "mrel_requirement_trea":        null,
+        "mrel_requirement_trea":        0.2444,
         "mrel_subord_requirement_trea": null,
         "mrel_requirement_tem":         null,
         "mrel_subord_requirement_tem":  null

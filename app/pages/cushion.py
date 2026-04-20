@@ -1,8 +1,23 @@
 """Cushion page (Q1) — MREL capacity vs requirement across peer set.
 
-Two horizontal bar charts (TREA basis and TEM basis), with the binding
-MREL requirement drawn as a marker on each bar so the surplus/shortfall
-reads at a glance. BPM is highlighted; peers ordered by capacity.
+On the TREA basis we show **two** side-by-side charts to keep the CBR
+treatment visible:
+
+- **Cushion vs MREL (ex-CBR)** — capacity vs the requirement on a
+  comparable ex-CBR base. This is the metric for peer-to-peer
+  comparability because a handful of banks disclose their requirement
+  including CBR (Iccrea, Mediobanca, BBVA) and others disclose it
+  excluding CBR (the KM2 filing convention). ``core.cbr`` normalizes
+  both into an ex-CBR base.
+
+- **Cushion vs OCR (with-CBR)** — capacity vs requirement + CBR. This is
+  the M-MDA threshold: if it goes negative, dividend / coupon / bonus
+  restrictions trigger.
+
+A TEM card sits below — TEM is not affected by the CBR treatment so a
+single chart is enough.
+
+BPM is highlighted; peers ordered by capacity.
 """
 from __future__ import annotations
 
@@ -37,10 +52,13 @@ def layout():
                 [
                     html.H2("Cushion — MREL capacity vs requirement"),
                     html.Div(
-                        "Each bar shows a bank's MREL capacity; the amber marker "
-                        "is the binding MREL requirement for that bank. Positive "
-                        "gap = surplus; negative = shortfall. BPM is highlighted "
-                        "in red.",
+                        "Each bar shows a bank's MREL capacity; the amber "
+                        "marker is the binding requirement. The two TREA "
+                        "charts differ only in how the CBR is treated: the "
+                        "left chart uses the MREL requirement on a comparable "
+                        "ex-CBR base (peer-comparable), the right chart adds "
+                        "CBR to get the OCR threshold (below which M-MDA "
+                        "restrictions trigger). BPM is highlighted in red.",
                         className="caption",
                     ),
                 ],
@@ -48,15 +66,60 @@ def layout():
             ),
             html.Div(id="cushion-badges",
                      style={"display": "flex", "gap": "12px",
-                            "marginBottom": "16px"}),
+                            "marginBottom": "16px", "flexWrap": "wrap"}),
             export_bar("cushion"),
             html.Div(
                 [
                     html.H3("MREL as % of TREA"),
-                    metric_methodology("mrel_pct_trea"),
-                    dcc.Graph(id="cushion-trea-chart",
-                              config=graph_config("mrel_cushion_trea"),
-                              style={"height": "620px"}),
+                    html.Div(
+                        "Two views side-by-side — same capacity bars, "
+                        "different requirement marker.",
+                        className="caption",
+                    ),
+                    html.Div(
+                        [
+                            html.Div(
+                                [
+                                    html.H4(
+                                        "Cushion vs MREL (ex-CBR)",
+                                        style={"marginBottom": "4px"},
+                                    ),
+                                    metric_methodology(
+                                        "mrel_surplus_trea_ex_cbr_pp"
+                                    ),
+                                    dcc.Graph(
+                                        id="cushion-trea-ex-cbr-chart",
+                                        config=graph_config(
+                                            "mrel_cushion_trea_ex_cbr"
+                                        ),
+                                        style={"height": "620px"},
+                                    ),
+                                ],
+                                style={"flex": "1", "minWidth": "0"},
+                            ),
+                            html.Div(
+                                [
+                                    html.H4(
+                                        "Cushion vs OCR (with-CBR)",
+                                        style={"marginBottom": "4px"},
+                                    ),
+                                    metric_methodology(
+                                        "mrel_surplus_trea_with_cbr_pp"
+                                    ),
+                                    dcc.Graph(
+                                        id="cushion-trea-with-cbr-chart",
+                                        config=graph_config(
+                                            "mrel_cushion_trea_with_cbr"
+                                        ),
+                                        style={"height": "620px"},
+                                    ),
+                                ],
+                                style={"flex": "1", "minWidth": "0"},
+                            ),
+                        ],
+                        style={"display": "flex", "gap": "16px",
+                               "flexWrap": "wrap"},
+                    ),
                 ],
                 className="card",
             ),
@@ -86,7 +149,7 @@ def _format_badge(title: str, value: str, sub: str, tone: str = "navy"):
             html.Div(sub, style={"color": GREY_600, "fontSize": "12px"}),
         ],
         className="card",
-        style={"flex": "1", "margin": "0"},
+        style={"flex": "1", "margin": "0", "minWidth": "200px"},
     )
 
 
@@ -96,10 +159,13 @@ def _cushion_figure(
     ref_date: pd.Timestamp,
     capacity_key: str,
     requirement_key: str,
+    capacity_label: str | None = None,
+    requirement_label: str = "Requirement",
 ) -> go.Figure:
     fig = go.Figure()
     apply_layout(fig)
     caption = get_caption(capacity_key)
+    cap_label = capacity_label or caption.label
 
     snap = wide[
         (wide["reference_date"] == ref_date)
@@ -115,13 +181,16 @@ def _cushion_figure(
     snap = snap.sort_values(capacity_key, ascending=True)
     labels = snap["entity_name"].fillna(snap["entity_lei"]).to_list()
     capacity = snap[capacity_key].to_list()
-    requirement = snap[requirement_key].to_list() if requirement_key in snap.columns else [None] * len(snap)
+    if requirement_key in snap.columns:
+        requirement = snap[requirement_key].to_list()
+    else:
+        requirement = [None] * len(snap)
     is_bpm = (snap["entity_lei"] == data.BPM).to_list()
 
     bar_colors = [BPM_COLOR if b else PEER_COLOR for b in is_bpm]
     capacity_hover = [
         f"{n}<br>Capacity: {c * 100:.2f}%"
-        f"{('<br>Requirement: ' + f'{r * 100:.2f}%') if r is not None and pd.notna(r) else ''}"
+        f"{('<br>' + requirement_label + ': ' + f'{r * 100:.2f}%') if r is not None and pd.notna(r) else ''}"
         f"{('<br>Surplus: ' + f'{(c - r) * 100:+.2f} pp') if r is not None and pd.notna(r) else ''}"
         for n, c, r in zip(labels, capacity, requirement)
     ]
@@ -143,12 +212,12 @@ def _cushion_figure(
             y=req_labels, x=req_values, mode="markers",
             marker={"symbol": "line-ns", "size": 18,
                     "line": {"color": REQUIREMENT_COLOR, "width": 3}},
-            name="Requirement",
-            hovertemplate="Requirement: %{x:.2%}<extra></extra>",
+            name=requirement_label,
+            hovertemplate=requirement_label + ": %{x:.2%}<extra></extra>",
         ))
 
     fig.update_layout(
-        xaxis={"tickformat": ".0%", "title": caption.label},
+        xaxis={"tickformat": ".0%", "title": cap_label},
         yaxis={"automargin": True},
         showlegend=True,
         legend={"orientation": "h", "y": 1.02, "x": 1, "xanchor": "right"},
@@ -160,7 +229,8 @@ def _cushion_figure(
 
 @callback(
     Output("cushion-badges", "children"),
-    Output("cushion-trea-chart", "figure"),
+    Output("cushion-trea-ex-cbr-chart", "figure"),
+    Output("cushion-trea-with-cbr-chart", "figure"),
     Output("cushion-tem-chart", "figure"),
     Input("peer-set", "value"),
     Input("reference-date", "value"),
@@ -175,7 +245,7 @@ def _render(peer_key: str, ref_date_iso: str):
         return (
             [html.Div("No data ingested — run scripts/ingest.py.",
                       className="card")],
-            empty_fig, empty_fig,
+            empty_fig, empty_fig, empty_fig,
         )
 
     ref_date = pd.Timestamp(ref_date_iso)
@@ -192,15 +262,39 @@ def _render(peer_key: str, ref_date_iso: str):
         bpm_value_txt = f"{r_peer.value * 100:.2f}%"
     else:
         bpm_value_txt = "—"
-    surplus = snap[snap["entity_lei"] == data.BPM]
-    if not surplus.empty and pd.notna(surplus["mrel_surplus_trea_pp"].iloc[0]):
-        surplus_pp = surplus["mrel_surplus_trea_pp"].iloc[0]
-        surplus_txt = f"{surplus_pp * 100:+.2f} pp vs requirement"
-    else:
-        surplus_txt = "no surplus data"
+
+    # Pull BPM's two surplus views from the CBR-aware columns.
+    bpm_row = snap[snap["entity_lei"] == data.BPM]
+    def _surplus_txt(col: str, suffix: str) -> str:
+        if bpm_row.empty or col not in bpm_row.columns:
+            return "no data"
+        v = bpm_row[col].iloc[0]
+        if pd.isna(v):
+            return "no data"
+        return f"{v * 100:+.2f} pp vs {suffix}"
+
+    surplus_txt_legacy = _surplus_txt("mrel_surplus_trea_pp", "requirement")
+    surplus_ex_cbr_txt = _surplus_txt("mrel_surplus_trea_ex_cbr_pp", "MREL (ex-CBR)")
+    surplus_with_cbr_txt = _surplus_txt("mrel_surplus_trea_with_cbr_pp", "OCR (with-CBR)")
+
+    # CBR caveat for the BPM tile (if an estimate was used).
+    cbr_note = ""
+    if not bpm_row.empty and "cbr_is_estimate" in bpm_row.columns:
+        is_est = bool(bpm_row["cbr_is_estimate"].iloc[0])
+        treatment = str(bpm_row["cbr_treatment"].iloc[0]) if "cbr_treatment" in bpm_row.columns else ""
+        cbr_note = (
+            f"CBR: {treatment}" + (" (estimated)" if is_est else "")
+        )
 
     badges = [
-        _format_badge("BPM MREL % TREA", bpm_value_txt, surplus_txt, tone="red"),
+        _format_badge("BPM MREL % TREA", bpm_value_txt,
+                      surplus_txt_legacy, tone="red"),
+        _format_badge("BPM cushion vs MREL (ex-CBR)",
+                      surplus_ex_cbr_txt,
+                      cbr_note, tone="red"),
+        _format_badge("BPM cushion vs OCR (with-CBR)",
+                      surplus_with_cbr_txt,
+                      "M-MDA breach if < 0", tone="red"),
         _format_badge(
             "Rank in peer set",
             f"{r_peer.rank} / {r_peer.total_with_data}"
@@ -223,11 +317,26 @@ def _render(peer_key: str, ref_date_iso: str):
         ),
     ]
 
-    trea_fig = _cushion_figure(wide, peer_leis, ref_date,
-                               "mrel_pct_trea", "mrel_requirement_trea")
-    tem_fig = _cushion_figure(wide, peer_leis, ref_date,
-                              "mrel_pct_tem", "mrel_requirement_tem")
-    return badges, trea_fig, tem_fig
+    trea_ex_cbr_fig = _cushion_figure(
+        wide, peer_leis, ref_date,
+        capacity_key="mrel_pct_trea",
+        requirement_key="mrel_requirement_trea_ex_cbr",
+        capacity_label="MREL % TREA — requirement on ex-CBR base",
+        requirement_label="Requirement (ex-CBR)",
+    )
+    trea_with_cbr_fig = _cushion_figure(
+        wide, peer_leis, ref_date,
+        capacity_key="mrel_pct_trea",
+        requirement_key="mrel_requirement_trea_with_cbr",
+        capacity_label="MREL % TREA — requirement + CBR (OCR threshold)",
+        requirement_label="OCR (MREL + CBR)",
+    )
+    tem_fig = _cushion_figure(
+        wide, peer_leis, ref_date,
+        capacity_key="mrel_pct_tem",
+        requirement_key="mrel_requirement_tem",
+    )
+    return badges, trea_ex_cbr_fig, trea_with_cbr_fig, tem_fig
 
 
 @callback(
@@ -243,13 +352,19 @@ def _export_csv(n_clicks, peer_key, ref_date_iso):
     wide = data.load_km2()
     ref_date = pd.Timestamp(ref_date_iso)
     peer_leis = data.resolve_peers(peer_key)
+    base_cols = [
+        "entity_lei", "entity_name", "country", "reference_date",
+        "mrel_pct_trea", "mrel_requirement_trea", "mrel_surplus_trea_pp",
+        "cbr_pct_trea", "cbr_treatment", "cbr_is_estimate", "cbr_source",
+        "mrel_requirement_trea_ex_cbr", "mrel_requirement_trea_with_cbr",
+        "mrel_surplus_trea_ex_cbr_pp", "mrel_surplus_trea_with_cbr_pp",
+        "mrel_pct_tem", "mrel_requirement_tem", "mrel_surplus_tem_pp",
+        "subord_pct_trea", "subordination_ratio",
+    ]
+    # Only include columns that exist (defensive against older ingests).
+    cols = [c for c in base_cols if c in wide.columns]
     snap = wide[
         (wide["reference_date"] == ref_date)
         & (wide["entity_lei"].isin(peer_leis))
-    ][[
-        "entity_lei", "entity_name", "country", "reference_date",
-        "mrel_pct_trea", "mrel_requirement_trea", "mrel_surplus_trea_pp",
-        "mrel_pct_tem", "mrel_requirement_tem", "mrel_surplus_tem_pp",
-        "subord_pct_trea", "subordination_ratio",
-    ]].sort_values("mrel_pct_trea", ascending=False)
+    ][cols].sort_values("mrel_pct_trea", ascending=False)
     return dcc.send_data_frame(snap.to_csv, "mrel_cushion.csv", index=False)
