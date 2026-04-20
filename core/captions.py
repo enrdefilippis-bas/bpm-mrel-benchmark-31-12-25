@@ -20,6 +20,10 @@ class MetricCaption:
     formula: str                # human-readable formula using source cell refs
     sources: tuple[str, ...]    # Pillar 3 cell refs, e.g. ("K_90.01 r0040 c0010",)
     description: str            # one-sentence tooltip body
+    direction: str = "higher_better"
+    # "higher_better" → green when BPM > peer median, red when below
+    # "lower_better"  → blue when BPM < peer median (favorable), red when above
+    # "neutral"       → grey delta (size metric, no favorable direction)
 
 
 METRIC_CAPTIONS: dict[str, MetricCaption] = {
@@ -67,6 +71,7 @@ METRIC_CAPTIONS: dict[str, MetricCaption] = {
         formula="K_90.01 r0120 c0010",
         sources=("K_90.01 r0120 c0010",),
         description="Binding MREL requirement expressed as a percentage of TREA.",
+        direction="lower_better",
     ),
     "mrel_surplus_trea_pp": MetricCaption(
         key="mrel_surplus_trea_pp",
@@ -88,6 +93,7 @@ METRIC_CAPTIONS: dict[str, MetricCaption] = {
         formula="K_90.01 r0010 c0010",
         sources=("K_90.01 r0010 c0010",),
         description="Absolute euro amount of MREL capacity (stack).",
+        direction="neutral",
     ),
     "subordination_ratio": MetricCaption(
         key="subordination_ratio",
@@ -110,6 +116,7 @@ METRIC_CAPTIONS: dict[str, MetricCaption] = {
         formula="K_90.01 r0030 c0010",
         sources=("K_90.01 r0030 c0010",),
         description="Total risk-weighted exposure of the resolution group.",
+        direction="neutral",
     ),
     "tem": MetricCaption(
         key="tem",
@@ -119,6 +126,7 @@ METRIC_CAPTIONS: dict[str, MetricCaption] = {
         formula="K_90.01 r0060 c0010",
         sources=("K_90.01 r0060 c0010",),
         description="Leverage-ratio denominator of the resolution group.",
+        direction="neutral",
     ),
     "total_assets": MetricCaption(
         key="total_assets",
@@ -128,6 +136,7 @@ METRIC_CAPTIONS: dict[str, MetricCaption] = {
         formula="K_90.01 r0060 c0010",
         sources=("K_90.01 r0060 c0010",),
         description="Total exposure measure — alias for TEM, used as size proxy for peer comparisons.",
+        direction="neutral",
     ),
     "cet1_ratio": MetricCaption(
         key="cet1_ratio",
@@ -177,6 +186,7 @@ METRIC_CAPTIONS: dict[str, MetricCaption] = {
             "sourced from each bank's narrative Pillar 3 disclosure. NOT from EBA "
             "export row 0160 (which is absent for every bank in the 2025 release)."
         ),
+        direction="lower_better",
     ),
     "mrel_requirement_trea_ex_cbr": MetricCaption(
         key="mrel_requirement_trea_ex_cbr",
@@ -191,6 +201,7 @@ METRIC_CAPTIONS: dict[str, MetricCaption] = {
             "for banks that disclose the figure already inclusive of CBR "
             "(e.g. Mediobanca, Iccrea) we subtract CBR to align."
         ),
+        direction="lower_better",
     ),
     "mrel_requirement_trea_with_cbr": MetricCaption(
         key="mrel_requirement_trea_with_cbr",
@@ -204,6 +215,7 @@ METRIC_CAPTIONS: dict[str, MetricCaption] = {
             "face M-MDA / distribution restrictions. This is the 'real' bar a "
             "bank must clear, not the narrow MREL figure."
         ),
+        direction="lower_better",
     ),
     "mrel_surplus_trea_ex_cbr_pp": MetricCaption(
         key="mrel_surplus_trea_ex_cbr_pp",

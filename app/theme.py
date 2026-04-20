@@ -19,10 +19,11 @@ WHITE = "#ffffff"
 
 AMBER = "#e6a817"          # secondary accent (requirement line, warning)
 AMBER_SOFT = "#f3c96a"
-RED = "#c0362c"            # BPM highlight
+RED = "#c0362c"            # BPM highlight / unfavorable delta
 RED_SOFT = "#e8857d"
 TEAL = "#2e7d7d"           # peer aggregate
-GREEN = "#2e7d4f"          # surplus positive
+GREEN = "#2e7d4f"          # surplus positive / favorable delta
+BLUE = "#1e5bb8"           # favorable-inverted delta (e.g. below-median req)
 
 GREY_200 = "#d5dae0"
 GREY_400 = "#9aa4b1"
@@ -190,6 +191,10 @@ GLOBAL_CSS: Final[str] = f"""
     color: {GREY_600};
     margin-top: 2px;
   }}
+  .tile .tile-delta.favorable {{ color: {GREEN}; }}
+  .tile .tile-delta.unfavorable {{ color: {RED}; }}
+  .tile .tile-delta.favorable-inverted {{ color: {BLUE}; }}
+  /* legacy aliases — kept so old screenshots/tests keep working */
   .tile .tile-delta.pos {{ color: {GREEN}; }}
   .tile .tile-delta.neg {{ color: {RED}; }}
   .card {{

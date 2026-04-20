@@ -18,8 +18,22 @@ def _format_rank(rank: int, total: int) -> str:
     return f"{rank} / {total}"
 
 
-def _format_delta(value: float | None, unit: str) -> tuple[str, str]:
-    """Return (text, css-class) for a delta-vs-peer-median line."""
+def _format_delta(
+    value: float | None,
+    unit: str,
+    direction: str = "higher_better",
+) -> tuple[str, str]:
+    """Return (text, css-class) for a delta-vs-peer-median line.
+
+    The css-class reflects whether the delta is *favorable* for the bank,
+    not just its mathematical sign. For ``higher_better`` metrics a
+    positive delta is green; for ``lower_better`` metrics (e.g. the MREL
+    requirement — where a lower figure is regulatory good news for the
+    bank) a negative delta is shown in blue to flag "favorable but
+    negative sign". ``neutral`` metrics (size — total assets, TREA,
+    MREL stack in €) keep a grey delta since there is no favorable
+    direction.
+    """
     if value is None:
         return ("no peer median", "")
     if abs(value) < 0.001:
@@ -34,7 +48,14 @@ def _format_delta(value: float | None, unit: str) -> tuple[str, str]:
         text = f"{sign}€{magnitude / 1e9:.1f}bn vs peer median"
     else:
         text = f"{sign}{magnitude:.3f} vs peer median"
-    css = "pos" if value > 0 else "neg"
+
+    if direction == "neutral":
+        css = ""
+    elif direction == "lower_better":
+        # Below-median is favorable for the bank -> blue; above is unfavorable -> red.
+        css = "favorable-inverted" if value < 0 else "unfavorable"
+    else:  # "higher_better"
+        css = "favorable" if value > 0 else "unfavorable"
     return text, css
 
 
@@ -63,7 +84,7 @@ def metric_tile(
     else:
         delta = None
 
-    delta_text, delta_css = _format_delta(delta, caption.unit)
+    delta_text, delta_css = _format_delta(delta, caption.unit, caption.direction)
     delta_classes = "tile-delta"
     if delta_css:
         delta_classes += f" {delta_css}"
