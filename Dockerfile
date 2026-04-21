@@ -17,7 +17,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY --chown=appuser:appuser app/ ./app/
-COPY --chown=appuser:appuser pages/ ./pages/
+COPY --chown=appuser:appuser core/ ./core/
 COPY --chown=appuser:appuser data/processed/ ./data/processed/
 
 # Switch to non-root user
