@@ -125,6 +125,63 @@ def layout():
             ),
             html.Div(
                 [
+                    html.H3("Subordination as % of TREA"),
+                    html.Div(
+                        "Same two-view structure as MREL: subordinated "
+                        "capacity vs subordination requirement, ex-CBR and "
+                        "with-CBR. Follows the same per-bank CBR treatment "
+                        "as the total-MREL requirement.",
+                        className="caption",
+                    ),
+                    html.Div(
+                        [
+                            html.Div(
+                                [
+                                    html.H4(
+                                        "Subord cushion vs req (ex-CBR)",
+                                        style={"marginBottom": "4px"},
+                                    ),
+                                    metric_methodology(
+                                        "subord_surplus_trea_ex_cbr_pp"
+                                    ),
+                                    dcc.Graph(
+                                        id="cushion-subord-trea-ex-cbr-chart",
+                                        config=graph_config(
+                                            "mrel_subord_cushion_trea_ex_cbr"
+                                        ),
+                                        style={"height": "620px"},
+                                    ),
+                                ],
+                                style={"flex": "1", "minWidth": "0"},
+                            ),
+                            html.Div(
+                                [
+                                    html.H4(
+                                        "Subord cushion vs req + CBR",
+                                        style={"marginBottom": "4px"},
+                                    ),
+                                    metric_methodology(
+                                        "subord_surplus_trea_with_cbr_pp"
+                                    ),
+                                    dcc.Graph(
+                                        id="cushion-subord-trea-with-cbr-chart",
+                                        config=graph_config(
+                                            "mrel_subord_cushion_trea_with_cbr"
+                                        ),
+                                        style={"height": "620px"},
+                                    ),
+                                ],
+                                style={"flex": "1", "minWidth": "0"},
+                            ),
+                        ],
+                        style={"display": "flex", "gap": "16px",
+                               "flexWrap": "wrap"},
+                    ),
+                ],
+                className="card",
+            ),
+            html.Div(
+                [
                     html.H3("MREL as % of TEM"),
                     metric_methodology("mrel_pct_tem"),
                     dcc.Graph(id="cushion-tem-chart",
@@ -231,6 +288,8 @@ def _cushion_figure(
     Output("cushion-badges", "children"),
     Output("cushion-trea-ex-cbr-chart", "figure"),
     Output("cushion-trea-with-cbr-chart", "figure"),
+    Output("cushion-subord-trea-ex-cbr-chart", "figure"),
+    Output("cushion-subord-trea-with-cbr-chart", "figure"),
     Output("cushion-tem-chart", "figure"),
     Input("peer-set", "value"),
     Input("reference-date", "value"),
@@ -245,7 +304,7 @@ def _render(peer_key: str, ref_date_iso: str):
         return (
             [html.Div("No data ingested — run scripts/ingest.py.",
                       className="card")],
-            empty_fig, empty_fig, empty_fig,
+            empty_fig, empty_fig, empty_fig, empty_fig, empty_fig,
         )
 
     ref_date = pd.Timestamp(ref_date_iso)
@@ -331,12 +390,31 @@ def _render(peer_key: str, ref_date_iso: str):
         capacity_label="MREL % TREA — requirement + CBR (OCR threshold)",
         requirement_label="OCR (MREL + CBR)",
     )
+    subord_ex_cbr_fig = _cushion_figure(
+        wide, peer_leis, ref_date,
+        capacity_key="subord_pct_trea",
+        requirement_key="mrel_subord_requirement_trea_ex_cbr",
+        capacity_label="Subord % TREA — requirement on ex-CBR base",
+        requirement_label="Subord requirement (ex-CBR)",
+    )
+    subord_with_cbr_fig = _cushion_figure(
+        wide, peer_leis, ref_date,
+        capacity_key="subord_pct_trea",
+        requirement_key="mrel_subord_requirement_trea_with_cbr",
+        capacity_label="Subord % TREA — requirement + CBR",
+        requirement_label="Subord requirement + CBR",
+    )
     tem_fig = _cushion_figure(
         wide, peer_leis, ref_date,
         capacity_key="mrel_pct_tem",
         requirement_key="mrel_requirement_tem",
     )
-    return badges, trea_ex_cbr_fig, trea_with_cbr_fig, tem_fig
+    return (
+        badges,
+        trea_ex_cbr_fig, trea_with_cbr_fig,
+        subord_ex_cbr_fig, subord_with_cbr_fig,
+        tem_fig,
+    )
 
 
 @callback(
@@ -358,8 +436,12 @@ def _export_csv(n_clicks, peer_key, ref_date_iso):
         "cbr_pct_trea", "cbr_treatment", "cbr_is_estimate", "cbr_source",
         "mrel_requirement_trea_ex_cbr", "mrel_requirement_trea_with_cbr",
         "mrel_surplus_trea_ex_cbr_pp", "mrel_surplus_trea_with_cbr_pp",
+        "subord_pct_trea", "mrel_subord_requirement_trea",
+        "mrel_subord_requirement_trea_ex_cbr",
+        "mrel_subord_requirement_trea_with_cbr",
+        "subord_surplus_trea_ex_cbr_pp", "subord_surplus_trea_with_cbr_pp",
         "mrel_pct_tem", "mrel_requirement_tem", "mrel_surplus_tem_pp",
-        "subord_pct_trea", "subordination_ratio",
+        "subordination_ratio",
     ]
     # Only include columns that exist (defensive against older ingests).
     cols = [c for c in base_cols if c in wide.columns]

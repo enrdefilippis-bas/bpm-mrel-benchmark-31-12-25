@@ -242,6 +242,70 @@ METRIC_CAPTIONS: dict[str, MetricCaption] = {
             "flexibility. Stricter, more economically meaningful cushion."
         ),
     ),
+    "mrel_subord_requirement_trea": MetricCaption(
+        key="mrel_subord_requirement_trea",
+        label="MREL subordination requirement (% of TREA)",
+        short_label="Subord req % TREA",
+        unit="%",
+        formula="K_90.01 r0130 c0010",
+        sources=("K_90.01 r0130 c0010",),
+        description=(
+            "Subordination requirement — the portion of the MREL requirement "
+            "that must be met with own funds and subordinated instruments."
+        ),
+        direction="lower_better",
+    ),
+    "mrel_subord_requirement_trea_ex_cbr": MetricCaption(
+        key="mrel_subord_requirement_trea_ex_cbr",
+        label="Subordination requirement ex-CBR (% of TREA)",
+        short_label="Subord req ex-CBR",
+        unit="%",
+        formula="subord_req − CBR (if INCLUDED) else subord_req (ON_TOP)",
+        sources=("K_90.01 r0130 c0010", "Pillar 3 PDF (narrative)"),
+        description=(
+            "Subordination requirement normalized to an EX-CBR base so all "
+            "peers are comparable. Follows the same CBR treatment as the "
+            "total-MREL requirement for the same bank."
+        ),
+        direction="lower_better",
+    ),
+    "mrel_subord_requirement_trea_with_cbr": MetricCaption(
+        key="mrel_subord_requirement_trea_with_cbr",
+        label="Subordination requirement + CBR (% of TREA)",
+        short_label="Subord req + CBR",
+        unit="%",
+        formula="subord_req_ex_cbr + CBR",
+        sources=("K_90.01 r0130 c0010", "Pillar 3 PDF (narrative)"),
+        description=(
+            "Subordination requirement augmented with CBR — the analogue of the "
+            "OCR threshold for the subordinated portion of the MREL stack."
+        ),
+        direction="lower_better",
+    ),
+    "subord_surplus_trea_ex_cbr_pp": MetricCaption(
+        key="subord_surplus_trea_ex_cbr_pp",
+        label="Subord cushion vs MREL-sub (ex-CBR, TREA)",
+        short_label="Subord cushion (ex-CBR)",
+        unit="pp",
+        formula="subord_pct_trea − mrel_subord_requirement_trea_ex_cbr",
+        sources=("K_90.01 r0050 c0010", "K_90.01 r0130 c0010"),
+        description=(
+            "Subordinated-capacity minus the subordination requirement on an "
+            "ex-CBR base. Positive = cushion; negative = shortfall."
+        ),
+    ),
+    "subord_surplus_trea_with_cbr_pp": MetricCaption(
+        key="subord_surplus_trea_with_cbr_pp",
+        label="Subord cushion vs MREL-sub + CBR (TREA)",
+        short_label="Subord cushion (with-CBR)",
+        unit="pp",
+        formula="subord_pct_trea − mrel_subord_requirement_trea_with_cbr",
+        sources=("K_90.01 r0050 c0010", "K_90.01 r0130 c0010", "Pillar 3 PDF"),
+        description=(
+            "Subordinated-capacity minus subordination requirement plus CBR. "
+            "The stricter subordination-space analogue of the OCR cushion."
+        ),
+    ),
 }
 
 

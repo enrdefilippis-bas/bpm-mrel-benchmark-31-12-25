@@ -84,10 +84,10 @@ CBR_DISCLOSURES: Final[dict[tuple[str, str], CbrDisclosure]] = {
         is_estimate=True,
     ),
     ("815600E4E6DCD2D25E30", "2025-12-31"): CbrDisclosure(
-        cbr_pct_trea=0.0360,  # slight CCyB uptick assumed
+        cbr_pct_trea=0.0374,  # explicit: P3 dicembre 2025 ITA p.27
         treatment=CbrTreatment.ON_TOP,
-        source="BPM Pillar 3 (treatment rolled forward)",
-        is_estimate=True,
+        source="BPM Pillar 3 31-12-2025 ITA p.27 ('requisito combinato di riserva di capitale ... è pari a 3,74%')",
+        is_estimate=False,
     ),
     # Intesa Sanpaolo — Pillar 3 explicit: 21.00% TREA + CBR 4.48% = 25.48%.
     ("2W8N8UU78PMDQKZENC08", "2025-06-30"): CbrDisclosure(
@@ -418,16 +418,29 @@ def attach_cbr(wide: pd.DataFrame) -> pd.DataFrame:
     - `cbr_treatment` — 'on_top' / 'included' / 'unknown_defaulted'
     - `cbr_is_estimate` — True if CBR value is a placeholder
     - `cbr_source` — free-text citation
-    - `mrel_requirement_trea_ex_cbr` — requirement on a comparable EX-CBR base
-    - `mrel_requirement_trea_with_cbr` — requirement + CBR (the M-MDA threshold)
-    - `mrel_surplus_trea_ex_cbr_pp` — capacity - req_ex_cbr  (cushion vs MREL)
+    - `mrel_requirement_trea_ex_cbr` — total-MREL requirement on EX-CBR base
+    - `mrel_requirement_trea_with_cbr` — total-MREL requirement + CBR (OCR)
+    - `mrel_surplus_trea_ex_cbr_pp` — capacity - req_ex_cbr (cushion vs MREL)
     - `mrel_surplus_trea_with_cbr_pp` — capacity - req_with_cbr (cushion vs OCR)
+    - `mrel_subord_requirement_trea_ex_cbr` — subordination req on EX-CBR base
+    - `mrel_subord_requirement_trea_with_cbr` — subordination req + CBR
+    - `subord_surplus_trea_ex_cbr_pp` — subord_pct - subord_req_ex_cbr
+    - `subord_surplus_trea_with_cbr_pp` — subord_pct - subord_req_with_cbr
+
+    The subordination requirement follows the same CBR treatment as the
+    total-MREL requirement for the same bank (both figures come from the
+    same KM2 template and the bank's disclosed CBR convention applies to
+    both rows 0120 and 0130 uniformly).
     """
     if wide.empty:
         for col in (
             "cbr_pct_trea", "cbr_treatment", "cbr_is_estimate", "cbr_source",
             "mrel_requirement_trea_ex_cbr", "mrel_requirement_trea_with_cbr",
             "mrel_surplus_trea_ex_cbr_pp", "mrel_surplus_trea_with_cbr_pp",
+            "mrel_subord_requirement_trea_ex_cbr",
+            "mrel_subord_requirement_trea_with_cbr",
+            "subord_surplus_trea_ex_cbr_pp",
+            "subord_surplus_trea_with_cbr_pp",
         ):
             wide[col] = pd.Series(dtype="object" if col.endswith(("treatment", "source")) else "Float64")
         return wide
@@ -448,7 +461,13 @@ def attach_cbr(wide: pd.DataFrame) -> pd.DataFrame:
             disc.cbr_pct_trea,
             effective_treatment,
         )
+        subord_req_ex_cbr, subord_req_with_cbr = normalize_requirement(
+            row.get("mrel_subord_requirement_trea"),
+            disc.cbr_pct_trea,
+            effective_treatment,
+        )
         capacity = row.get("mrel_pct_trea")
+        subord_capacity = row.get("subord_pct_trea")
         surplus_ex = (capacity - req_ex_cbr) if (
             capacity is not None and req_ex_cbr is not None
             and not pd.isna(capacity) and not pd.isna(req_ex_cbr)
@@ -456,6 +475,14 @@ def attach_cbr(wide: pd.DataFrame) -> pd.DataFrame:
         surplus_with = (capacity - req_with_cbr) if (
             capacity is not None and req_with_cbr is not None
             and not pd.isna(capacity) and not pd.isna(req_with_cbr)
+        ) else None
+        subord_surplus_ex = (subord_capacity - subord_req_ex_cbr) if (
+            subord_capacity is not None and subord_req_ex_cbr is not None
+            and not pd.isna(subord_capacity) and not pd.isna(subord_req_ex_cbr)
+        ) else None
+        subord_surplus_with = (subord_capacity - subord_req_with_cbr) if (
+            subord_capacity is not None and subord_req_with_cbr is not None
+            and not pd.isna(subord_capacity) and not pd.isna(subord_req_with_cbr)
         ) else None
         records.append({
             "cbr_pct_trea": disc.cbr_pct_trea,
@@ -466,6 +493,10 @@ def attach_cbr(wide: pd.DataFrame) -> pd.DataFrame:
             "mrel_requirement_trea_with_cbr": req_with_cbr,
             "mrel_surplus_trea_ex_cbr_pp": surplus_ex,
             "mrel_surplus_trea_with_cbr_pp": surplus_with,
+            "mrel_subord_requirement_trea_ex_cbr": subord_req_ex_cbr,
+            "mrel_subord_requirement_trea_with_cbr": subord_req_with_cbr,
+            "subord_surplus_trea_ex_cbr_pp": subord_surplus_ex,
+            "subord_surplus_trea_with_cbr_pp": subord_surplus_with,
         })
     attached = pd.DataFrame(records, index=out.index)
     return pd.concat([out, attached], axis=1)
