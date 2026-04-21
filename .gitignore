@@ -12,6 +12,10 @@ data/processed/*.parquet
 data/db/*.duckdb
 data/processed/ingest_log.json
 
+# Exceptions: small processed tables needed at runtime (tracked in git)
+!data/processed/banks.parquet
+!data/processed/facts.parquet
+
 # OS / editor
 .DS_Store
 .idea/
