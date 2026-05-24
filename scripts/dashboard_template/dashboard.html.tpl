@@ -220,7 +220,7 @@ const LAYOUT_BASE={
   hoverlabel:{bgcolor:NAVY,bordercolor:NAVY,font:{family:FONT,color:WHITE,size:12}},
   xaxis:{gridcolor:GREY200,zerolinecolor:GREY200},
   yaxis:{gridcolor:GREY200,zerolinecolor:GREY200},
-  margin:{l:220,r:24,t:40,b:40},
+  margin:{l:220,r:24,t:90,b:40},
 };
 
 // ─── PEER FILTER ──────────────────────────────────────────────────────────
@@ -403,10 +403,10 @@ function renderUniverse(){
       ticktext:["15%","20%","25%","30%","35%","40%","45%","50%","55%","60%","65%","70%"],
       gridcolor:GREY200,
     },
-    margin:{l:80,r:80,t:48,b:60},
+    margin:{l:80,r:80,t:90,b:60},
     showlegend:true,
-    legend:{orientation:"h",y:1.08,x:0,xanchor:"left",
-            font:{size:11}},
+    legend:{orientation:"h",y:1.16,x:0,xanchor:"left",yanchor:"bottom",
+            font:{size:11},bgcolor:"rgba(255,255,255,0.85)"},
     shapes:shapes,
     annotations:annotations,
     height:520,
@@ -470,7 +470,7 @@ function renderCushion(){
     title:{text:spec.title,font:{family:FONT,color:NAVY,size:14},x:0},
     xaxis:{...LAYOUT_BASE.xaxis,tickformat:".0%",title:""},
     yaxis:{automargin:true},
-    showlegend:true,legend:{orientation:"h",y:1.05,x:1,xanchor:"right"},
+    showlegend:true,legend:{orientation:"h",y:1.18,x:1,xanchor:"right",yanchor:"bottom",bgcolor:"rgba(255,255,255,0.85)"},
     height:h,
   },plotlyConfig());
   document.getElementById("cushion-chart-title").textContent="";
@@ -564,8 +564,8 @@ function renderComposition(){
       range:mode==="pct"?[0,1]:undefined},
     yaxis:{automargin:true},
     showlegend:true,
-    legend:{orientation:"h",y:1.05,x:1,xanchor:"right"},
-    height:Math.max(380,26*rows.length+140),
+    legend:{orientation:"h",y:1.18,x:1,xanchor:"right",yanchor:"bottom",bgcolor:"rgba(255,255,255,0.85)"},
+    height:Math.max(380,26*rows.length+170),
   },plotlyConfig());
 }
 
@@ -640,8 +640,8 @@ function renderMaturity(){
     title:{text:"Maturity profile — 31-12-2025",font:{family:FONT,color:NAVY,size:14},x:0},
     xaxis:{title:"Residual maturity bucket",side:"top",gridcolor:GREY200},
     yaxis:{automargin:true,gridcolor:GREY200},
-    margin:{l:240,r:60,t:60,b:40},
-    height:Math.max(420,28*rows.length+140),showlegend:false,
+    margin:{l:240,r:60,t:80,b:40},
+    height:Math.max(420,28*rows.length+160),showlegend:false,
   },plotlyConfig());
 }
 
@@ -697,7 +697,7 @@ function renderCreditor(){
       range:mode==="pct"?[0,1]:undefined},
     yaxis:{automargin:true},
     showlegend:true,
-    legend:{orientation:"h",y:1.05,x:1,xanchor:"right"},
+    legend:{orientation:"h",y:1.18,x:1,xanchor:"right",yanchor:"bottom",bgcolor:"rgba(255,255,255,0.85)"},
     height:Math.max(380,26*rows.length+140),
   },plotlyConfig());
 }
