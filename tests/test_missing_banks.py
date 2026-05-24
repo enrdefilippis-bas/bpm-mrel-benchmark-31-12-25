@@ -10,11 +10,20 @@ import pytest
 from core.schema import Source, Template, UnitType
 from ingestion.missing_banks import (
     ALL_PARSERS,
+    AIBParser,
     BankMeta,
     BaseBankParser,
     BBVAParser,
+    BPERParser,
+    BPMParser,
+    CassaCentraleParser,
+    CredemParser,
     CreditAgricoleParser,
+    ICCREAParser,
     IntesaParser,
+    MediobancaParser,
+    MediolanumParser,
+    MPSParser,
     SocGenParser,
     UniCreditParser,
 )
@@ -38,15 +47,29 @@ def test_all_parsers_declare_valid_bank_meta():
         assert cls.meta.source_tag in {s.value for s in Source}
 
 
-def test_five_parsers_cover_all_missing_banks():
+def test_all_parsers_cover_all_missing_banks():
     # Stable inventory guard — the peer set relies on these LEIs.
+    # Originally 5 parsers; expanded to 14 as of May 2026.
+    # Count is checked against len(ALL_PARSERS) to avoid hardcoding.
     by_lei = {cls.meta.lei: cls for cls in ALL_PARSERS}
+    # Original five parsers (always required)
     assert IntesaParser.meta.lei in by_lei
     assert UniCreditParser.meta.lei in by_lei
     assert BBVAParser.meta.lei in by_lei
     assert CreditAgricoleParser.meta.lei in by_lei
     assert SocGenParser.meta.lei in by_lei
-    assert len(by_lei) == 5
+    # Italian O-SIIs / Cluster 2 added subsequently
+    assert MPSParser.meta.lei in by_lei
+    assert MediobancaParser.meta.lei in by_lei
+    assert BPERParser.meta.lei in by_lei
+    assert CredemParser.meta.lei in by_lei
+    assert MediolanumParser.meta.lei in by_lei
+    assert ICCREAParser.meta.lei in by_lei
+    assert CassaCentraleParser.meta.lei in by_lei
+    assert AIBParser.meta.lei in by_lei
+    assert BPMParser.meta.lei in by_lei
+    # Dynamic count: must match ALL_PARSERS (no orphan imports, no missing registrations)
+    assert len(by_lei) == len(ALL_PARSERS)
 
 
 def test_parse_pdf_default_raises_not_implemented(tmp_path: Path):

@@ -249,16 +249,34 @@ def leverage_ratio(facts: pd.DataFrame) -> pd.DataFrame:
 # ---- TLAC1 composition ----
 
 # Five instrument classes used on the composition page.
-# Each class maps to a list of TLAC1 rows summed at col c0010 (MREL amount).
+# Classes whose total = simple sum of the listed K_91.00 rows (col c0010).
+# Senior eligible has a special rule (see comment below) and is computed
+# separately to avoid double-counting r0160 against r0140 + r0150.
 TLAC1_COMPOSITION_CLASSES: dict[str, tuple[str, ...]] = {
     "cet1": ("0010",),
     "at1": ("0020",),
     "tier2": ("0060",),
     # Own issuance + intra-group + pre-2019 grandfathered + T2-residual.
     "subord_eligible_liabilities": ("0100", "0110", "0120", "0130"),
-    # Pre-cap + pre-2019 grandfathered + post-Art 72b(3) capped non-subord.
-    "senior_eligible_liabilities": ("0140", "0150", "0160"),
 }
+
+# Senior eligible (K_91.00 col c0010):
+#   r0140 = senior pre-cap, not grandfathered
+#   r0150 = senior grandfathered (pre-2019)
+#   r0160 = "Amount of non-subordinated eligible liabilities instruments,
+#            where applicable after application of Article 72b(3) CRR".
+#
+# r0160 is the POST-CAP AGGREGATE of r0140 + r0150: when no cap is applied
+# (common case), r0160 == r0140 + r0150 and summing all three double-counts
+# senior eligible. Confirmed by alignment with TLAC3 ranks: r0140 == K_97.00
+# r0050 col c0010 open_key="Rank 5" (Senior non-preferred), and r0150 ==
+# Rank 6 (Senior preferred). Therefore:
+#
+#   senior_eligible = r0160 if r0160 > 0 else r0140 + r0150
+#
+# This collapses the duplication while still honouring the post-cap value
+# when a real Art 72b(3) cap reduces the eligible amount.
+TLAC1_SENIOR_ROWS: tuple[str, str, str] = ("0140", "0150", "0160")
 
 
 def tlac1_composition(facts: pd.DataFrame) -> pd.DataFrame:
@@ -267,6 +285,9 @@ def tlac1_composition(facts: pd.DataFrame) -> pd.DataFrame:
     All amounts are euro values sourced from template K_91.00 column c0010
     (the MREL column). A ``total_stack`` column sums the five classes so
     callers can render either a 100% stacked view or an absolute-euro view.
+
+    See ``TLAC1_SENIOR_ROWS`` comment for the senior-eligible treatment
+    that avoids double-counting r0160 against r0140 + r0150.
     """
     tpl = Template.TLAC1.value
     out: pd.DataFrame | None = None
@@ -288,10 +309,29 @@ def tlac1_composition(facts: pd.DataFrame) -> pd.DataFrame:
             accum, on=["entity_lei", "reference_date"], how="outer"
         )
 
+    # Senior eligible: pick r0160 (post-cap aggregate) if reported, else
+    # r0140 + r0150 (no cap applied). See module comment above.
+    pre_row, gf_row, post_row = TLAC1_SENIOR_ROWS
+    sen_pre  = _pick(facts, tpl, pre_row,  "0010").rename(columns={"value": "_sen_pre"})
+    sen_gf   = _pick(facts, tpl, gf_row,   "0010").rename(columns={"value": "_sen_gf"})
+    sen_post = _pick(facts, tpl, post_row, "0010").rename(columns={"value": "_sen_post"})
+    sen = sen_pre.merge(sen_gf, on=["entity_lei", "reference_date"], how="outer")
+    sen = sen.merge(sen_post, on=["entity_lei", "reference_date"], how="outer")
+    for c in ("_sen_pre", "_sen_gf", "_sen_post"):
+        sen[c] = sen[c].fillna(0)
+    sen["senior_eligible_liabilities"] = sen.apply(
+        lambda r: r["_sen_post"] if r["_sen_post"] > 0
+        else r["_sen_pre"] + r["_sen_gf"],
+        axis=1,
+    )
+    sen = sen[["entity_lei", "reference_date", "senior_eligible_liabilities"]]
+
     assert out is not None
+    out = out.merge(sen, on=["entity_lei", "reference_date"], how="outer")
+
     # Total stack = sum of the five classes (treating missing as 0 only when
     # at least one class is present, to avoid manufacturing a zero row).
-    class_cols = list(TLAC1_COMPOSITION_CLASSES)
+    class_cols = list(TLAC1_COMPOSITION_CLASSES) + ["senior_eligible_liabilities"]
     any_present = out[class_cols].notna().any(axis=1)
     out["total_stack"] = out[class_cols].sum(axis=1, min_count=1)
     out = out.loc[any_present].copy()

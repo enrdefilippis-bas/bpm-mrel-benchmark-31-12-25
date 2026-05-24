@@ -1,0 +1,312 @@
+[
+  {
+    "lei": "259400DZXF7UJKK2AY35",
+    "name": "mBank S.A.",
+    "country": "Poland",
+    "trea_bn": 29.68,
+    "mrel_pct_trea": 0.2484,
+    "is_bpm": false,
+    "is_peer": false,
+    "cluster": "other"
+  },
+  {
+    "lei": "259400LGXW3K0GDAG361",
+    "name": "Santander Bank Polska S.A.",
+    "country": "Poland",
+    "trea_bn": 35.27,
+    "mrel_pct_trea": 0.2735,
+    "is_bpm": false,
+    "is_peer": false,
+    "cluster": "other"
+  },
+  {
+    "lei": "259400QHDOZWMJ103294",
+    "name": "ALIOR BANK S.A.",
+    "country": "Poland",
+    "trea_bn": 14.13,
+    "mrel_pct_trea": 0.2143,
+    "is_bpm": false,
+    "is_peer": false,
+    "cluster": "other"
+  },
+  {
+    "lei": "2W8N8UU78PMDQKZENC08",
+    "name": "Intesa Sanpaolo S.p.A.",
+    "country": "Italy",
+    "trea_bn": 310.2,
+    "mrel_pct_trea": 0.3728,
+    "is_bpm": false,
+    "is_peer": true,
+    "cluster": "c1"
+  },
+  {
+    "lei": "5493000LKS7B3UTF7H35",
+    "name": "Bank Polska Kasa Opieki S.A.",
+    "country": "Poland",
+    "trea_bn": 41.87,
+    "mrel_pct_trea": 0.2385,
+    "is_bpm": false,
+    "is_peer": false,
+    "cluster": "other"
+  },
+  {
+    "lei": "5493006QMFDDMYWIAM13",
+    "name": "Banco Santander, S.A.",
+    "country": "Spain",
+    "trea_bn": 425.53,
+    "mrel_pct_trea": 0.3973,
+    "is_bpm": false,
+    "is_peer": false,
+    "cluster": "other"
+  },
+  {
+    "lei": "549300C6TUMDXNOVXS82",
+    "name": "L\u00e4nsf\u00f6rs\u00e4kringar Bank AB - gruppen",
+    "country": "Sweden",
+    "trea_bn": 12.99,
+    "mrel_pct_trea": 0.4955,
+    "is_bpm": false,
+    "is_peer": false,
+    "cluster": "other"
+  },
+  {
+    "lei": "549300GKFG0RYRRQ1414",
+    "name": "DNB BANK ASA",
+    "country": "Norway",
+    "trea_bn": 84.94,
+    "mrel_pct_trea": 0.4091,
+    "is_bpm": false,
+    "is_peer": false,
+    "cluster": "other"
+  },
+  {
+    "lei": "549300Q3OIWRHQUQM052",
+    "name": "SpareBank 1 S\u00f8r-Norge",
+    "country": "Norway",
+    "trea_bn": 15.86,
+    "mrel_pct_trea": 0.6629,
+    "is_bpm": false,
+    "is_peer": false,
+    "cluster": "other"
+  },
+  {
+    "lei": "549300TRUWO2CD2G5692",
+    "name": "UniCredit S.p.A.",
+    "country": "Italy",
+    "trea_bn": 296.33,
+    "mrel_pct_trea": 0.3059,
+    "is_bpm": false,
+    "is_peer": true,
+    "cluster": "c1"
+  },
+  {
+    "lei": "635400AKJBGNS5WNQL34",
+    "name": "AIB Group plc",
+    "country": "Ireland",
+    "trea_bn": 54.18,
+    "mrel_pct_trea": 0.3518,
+    "is_bpm": false,
+    "is_peer": true,
+    "cluster": "c2"
+  },
+  {
+    "lei": "724500A1FNICHSDF2I11",
+    "name": "ASN Bank N.V.",
+    "country": "Netherlands",
+    "trea_bn": 18.26,
+    "mrel_pct_trea": 0.4079,
+    "is_bpm": false,
+    "is_peer": false,
+    "cluster": "other"
+  },
+  {
+    "lei": "7CUNS533WID6K7DGFI87",
+    "name": "CaixaBank, S.A.",
+    "country": "Spain",
+    "trea_bn": 244.46,
+    "mrel_pct_trea": 0.274,
+    "is_bpm": false,
+    "is_peer": false,
+    "cluster": "other"
+  },
+  {
+    "lei": "7LVZJ6XRIE7VNZ4UBX81",
+    "name": "BANCA MEDIOLANUM S.P.A.",
+    "country": "Italy",
+    "trea_bn": 16.68,
+    "mrel_pct_trea": 0.2492,
+    "is_bpm": false,
+    "is_peer": false,
+    "cluster": "other"
+  },
+  {
+    "lei": "815600E4E6DCD2D25E30",
+    "name": "BANCO BPM SOCIETA\u2019 PER AZIONI",
+    "country": "Italy",
+    "trea_bn": 65.28,
+    "mrel_pct_trea": 0.3402,
+    "is_bpm": true,
+    "is_peer": false,
+    "cluster": "bpm"
+  },
+  {
+    "lei": "A5GWLFH3KM7YV2SFQL84",
+    "name": "Belfius Bank",
+    "country": "Belgium",
+    "trea_bn": 72.15,
+    "mrel_pct_trea": 0.3119,
+    "is_bpm": false,
+    "is_peer": true,
+    "cluster": "c2"
+  },
+  {
+    "lei": "BFXS5XCH7N0Y05NIXW11",
+    "name": "ABN AMRO Bank N.V.",
+    "country": "Netherlands",
+    "trea_bn": 135.4,
+    "mrel_pct_trea": 0.3477,
+    "is_bpm": false,
+    "is_peer": false,
+    "cluster": "other"
+  },
+  {
+    "lei": "DG3RU1DBUFHT4ZF9WN62",
+    "name": "Co\u00f6peratieve Rabobank U.A.",
+    "country": "Netherlands",
+    "trea_bn": 239.22,
+    "mrel_pct_trea": 0.3496,
+    "is_bpm": false,
+    "is_peer": false,
+    "cluster": "other"
+  },
+  {
+    "lei": "J4CP7MHCXR8DAQMKIL78",
+    "name": "Banca Monte dei Paschi di Siena S.p.A.",
+    "country": "Italy",
+    "trea_bn": 46.27,
+    "mrel_pct_trea": 0.2944,
+    "is_bpm": false,
+    "is_peer": true,
+    "cluster": "c1"
+  },
+  {
+    "lei": "O2RNE8IBXP4R0TD8PU41",
+    "name": "Soci\u00e9t\u00e9 G\u00e9n\u00e9rale S.A.",
+    "country": "France",
+    "trea_bn": 393.13,
+    "mrel_pct_trea": 0.3252,
+    "is_bpm": false,
+    "is_peer": false,
+    "cluster": "other"
+  },
+  {
+    "lei": "P4GTT6GF1W40CVIMFR43",
+    "name": "Powszechna Kasa Oszczednosci Bank Polski S.A.",
+    "country": "Poland",
+    "trea_bn": 68.13,
+    "mrel_pct_trea": 0.2338,
+    "is_bpm": false,
+    "is_peer": false,
+    "cluster": "other"
+  },
+  {
+    "lei": "PSNL19R2RXX5U3QWHI44",
+    "name": "Mediobanca - Banca di Credito Finanziario S.p.A.",
+    "country": "Italy",
+    "trea_bn": 45.87,
+    "mrel_pct_trea": 0.4304,
+    "is_bpm": false,
+    "is_peer": true,
+    "cluster": "c1"
+  },
+  {
+    "lei": "R0MUWSFPU8MPRO8K5P83",
+    "name": "BNP Paribas",
+    "country": "France",
+    "trea_bn": 788.85,
+    "mrel_pct_trea": 0.2896,
+    "is_bpm": false,
+    "is_peer": false,
+    "cluster": "other"
+  },
+  {
+    "lei": "SI5RG2M0WQQLZCXKRM20",
+    "name": "Banco de Sabadell, S.A.",
+    "country": "Spain",
+    "trea_bn": 80.11,
+    "mrel_pct_trea": 0.2762,
+    "is_bpm": false,
+    "is_peer": true,
+    "cluster": "c2"
+  },
+  {
+    "lei": "U48ZC55EFS0K6YKA1212",
+    "name": "Banco Bilbao Vizcaya Argentaria, S.A.",
+    "country": "Spain",
+    "trea_bn": 205.15,
+    "mrel_pct_trea": 0.2889,
+    "is_bpm": false,
+    "is_peer": false,
+    "cluster": "other"
+  },
+  {
+    "lei": "R0MUWSFPU8MPRO8K5P83",
+    "name": "Cr\u00e9dit Agricole S.A.",
+    "country": "France",
+    "trea_bn": 662.7,
+    "mrel_pct_trea": 0.3179,
+    "is_bpm": false,
+    "is_peer": false,
+    "cluster": "other"
+  },
+  {
+    "lei": "N747OI7JINV7RUUH6190",
+    "name": "BPER Banca S.p.A.",
+    "country": "Italy",
+    "trea_bn": 80.1,
+    "mrel_pct_trea": 0.2735,
+    "is_bpm": false,
+    "is_peer": true,
+    "cluster": "c1"
+  },
+  {
+    "lei": "529900ODI3047E2LIV03",
+    "name": "Nordea Bank Abp",
+    "country": "Finland",
+    "trea_bn": 159.7,
+    "mrel_pct_trea": 0.366,
+    "is_bpm": false,
+    "is_peer": false,
+    "cluster": "other"
+  },
+  {
+    "lei": "3TK20IVIUJ8J3ZU0QE75",
+    "name": "ING Bank N.V.",
+    "country": "Netherlands",
+    "trea_bn": 340.2,
+    "mrel_pct_trea": 0.3189,
+    "is_bpm": false,
+    "is_peer": false,
+    "cluster": "other"
+  },
+  {
+    "lei": "MAES062Z21O4RZ2U7M96",
+    "name": "Danske Bank A/S",
+    "country": "Denmark",
+    "trea_bn": 90.2,
+    "mrel_pct_trea": 0.4215,
+    "is_bpm": false,
+    "is_peer": false,
+    "cluster": "other"
+  },
+  {
+    "lei": "213800X3Q9LSAKRUWY91",
+    "name": "KBC Group",
+    "country": "Belgium",
+    "trea_bn": 127.6,
+    "mrel_pct_trea": 0.3143,
+    "is_bpm": false,
+    "is_peer": false,
+    "cluster": "other"
+  }
+]

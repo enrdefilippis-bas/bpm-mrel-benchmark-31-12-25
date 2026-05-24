@@ -28,6 +28,20 @@
         "senior_pre_cap":        9830551000,
         "senior_grandfathered":  0,
         "senior_post_cap":       9830551000
+      },
+      "tlac3_maturity": {
+        "total_eligible":     19282314000,
+        "maturity_1_to_2y":   3059560000,
+        "maturity_2_to_5y":   5985612000,
+        "maturity_5_to_10y":  3219100000,
+        "maturity_10y_plus":  7018042000,
+        "maturity_perpetual": 0
+      },
+      "tlac3_ranking": {
+        "1": 7018042000,
+        "2": 904101000,
+        "4": 1529620000,
+        "5": 9830551000
       }
     }
   }

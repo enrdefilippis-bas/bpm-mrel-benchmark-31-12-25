@@ -1,0 +1,24 @@
+{
+  "entity_name": "BANCO BPM SOCIETA' PER AZIONI",
+  "source_pdf": "https://gruppo.bancobpm.it/download/informativa-da-parte-degli-enti-al-pubblico-terzo-pilastro-del-gruppo-banco-bpm-dati-riferiti-al-31-dicembre-2025",
+  "notes": "Ratios as decimals. Amounts in EUR (converted from EUR millions in PDF). TLAC3a granular ranking extracted from PDF (the EBA cell-level export aggregates Rank 2 + Rank 4 under a single 'no-rank' line — manual entry overrides). KM2 + TLAC1 left to EBA file (consolidated values). TLAC3 here is at resolution entity (individual) level: Equity (Rank 1) includes reserves, hence differs from CET1 consolidated in TLAC1. Mapping (italian SRB master scale, Dlgs 36/2018): Rank 1 = Equity, Rank 2 = Capital instruments + Subordinated Claims contractually agreed, Rank 3 = Subordinated liab not qualifying as own funds, Rank 4 = Senior Non-Preferred Debt ('strumenti di debito chirografario di secondo livello'), Rank 5 = Unsecured Claims (Senior Preferred), Rank 6 = Deposits different from those under layers IT 6 and IT 7.",
+  "reference_dates": {
+    "2025-12-31": {
+      "tlac3_maturity": {
+        "total_eligible":     25589000000,
+        "maturity_1_to_2y":    1770000000,
+        "maturity_2_to_5y":    6045000000,
+        "maturity_5_to_10y":   2430000000,
+        "maturity_10y_plus":   1283000000,
+        "maturity_perpetual": 14062000000
+      },
+      "tlac3_ranking": {
+        "1": 12672000000,
+        "2":  3606000000,
+        "4":  3250000000,
+        "5":  5780000000,
+        "6":   281000000
+      }
+    }
+  }
+}

@@ -89,106 +89,131 @@ CBR_DISCLOSURES: Final[dict[tuple[str, str], CbrDisclosure]] = {
         source="BPM Pillar 3 31-12-2025 ITA p.27 ('requisito combinato di riserva di capitale ... è pari a 3,74%')",
         is_estimate=False,
     ),
-    # Intesa Sanpaolo — Pillar 3 explicit: 21.00% TREA + CBR 4.48% = 25.48%.
+    # Intesa Sanpaolo — Pillar 3 31-12-2025 EU KM1 row 11 explicit: CBR = 4.49%
+    # (CCB 2.50 + CCyB 0.31 + SyRB 0.43 + O-SII 1.25); req_ex_cbr = 21.00%,
+    # req_inc_cbr = 25.49%. Q2/Q3 2025 use Q2 explicit value 4.48%.
+    # Updated 19 May 2026 with primary verification on Pillar 3 dic 2025 PDF.
     ("2W8N8UU78PMDQKZENC08", "2025-06-30"): CbrDisclosure(
         cbr_pct_trea=0.0448,
         treatment=CbrTreatment.ON_TOP,
-        source="Intesa Pillar 3 30-06-2025 p.37",
+        source="Intesa Pillar 3 30-06-2025 EU KM1 row 11 (4.48%)",
         is_estimate=False,
     ),
     ("2W8N8UU78PMDQKZENC08", "2025-09-30"): CbrDisclosure(
-        cbr_pct_trea=0.0448,
+        cbr_pct_trea=0.0449,
         treatment=CbrTreatment.ON_TOP,
-        source="Intesa Pillar 3 (treatment rolled forward)",
-        is_estimate=True,
+        source="Intesa Pillar 3 31-12-2025 EU KM1 row 11 (4.49% explicit for 30-09-2025)",
+        is_estimate=False,
     ),
     ("2W8N8UU78PMDQKZENC08", "2025-12-31"): CbrDisclosure(
-        cbr_pct_trea=0.0448,
+        cbr_pct_trea=0.0449,
         treatment=CbrTreatment.ON_TOP,
-        source="Intesa Pillar 3 (treatment rolled forward)",
-        is_estimate=True,
+        source="Intesa Pillar 3 31-12-2025 EU KM1 row 11: CBR 4.49% (CCB 2.50 + CCyB 0.31 + SyRB 0.43 + O-SII 1.25); verified 19 May 2026",
+        is_estimate=False,
     ),
-    # UniCredit — treatment not explicit in scraped Q2-2025 text ("not_found").
-    # UNKNOWN so the breach-test rule can drive the decision. CBR estimate:
-    # 2.5 CCB + 1.00 O-SII + G-SII 1.00% (UniCredit is a G-SII from 2024)
-    # + CCyB ~0.50.
+    # UniCredit — Pillar 3 31-12-2025 p.30 EN: CBR = 4.87% explicit.
+    # Treatment INCLUDED inferred: MREL realized 30.59% < 27.05 + 4.87 = 31.92%
+    # would breach OCR under ON_TOP assumption (very unlikely for a published
+    # filing), so 27.05% must already include CBR. Same logic rolled back to
+    # earlier 2025 quarters (treatment stable within fiscal year).
     ("549300TRUWO2CD2G5692", "2025-06-30"): CbrDisclosure(
-        cbr_pct_trea=0.050,
-        treatment=CbrTreatment.UNKNOWN,
-        source="Default (scrape: not_found); treatment inferred by breach-test; CBR estimated",
+        cbr_pct_trea=0.0487,
+        treatment=CbrTreatment.INCLUDED,
+        source="UniCredit Pillar 3 (treatment rolled back from 31-12-2025; CBR 4.87% explicit)",
         is_estimate=True,
     ),
     ("549300TRUWO2CD2G5692", "2025-09-30"): CbrDisclosure(
-        cbr_pct_trea=0.050,
-        treatment=CbrTreatment.UNKNOWN,
-        source="Default (scrape: not_found); treatment inferred by breach-test; CBR estimated",
+        cbr_pct_trea=0.0487,
+        treatment=CbrTreatment.INCLUDED,
+        source="UniCredit Pillar 3 (treatment rolled back from 31-12-2025; CBR 4.87% explicit)",
         is_estimate=True,
     ),
     ("549300TRUWO2CD2G5692", "2025-12-31"): CbrDisclosure(
-        cbr_pct_trea=0.050,
-        treatment=CbrTreatment.UNKNOWN,
-        source="Default (scrape: not_found); treatment inferred by breach-test; CBR estimated",
-        is_estimate=True,
+        cbr_pct_trea=0.0487,
+        treatment=CbrTreatment.INCLUDED,
+        source="UniCredit Pillar 3 31-12-2025 EN p.30: CBR = 4.87% explicit; treatment INCLUDED inferred by breach-test (capacity 30.59 < req 27.05 + CBR 4.87 = 31.92)",
+        is_estimate=False,
     ),
-    # Monte dei Paschi — not_found in scrape. UNKNOWN so breach-test drives
-    # the decision; CBR estimate 2.5 CCB + 0.50 O-SII + ~0.30 CCyB = 3.3%.
+    # Monte dei Paschi — Pillar 3 dicembre 2025 EU KM1 row 11 verified
+    # 19 May 2026: CBR = 3.2691% al 31-12-2025 (CCB 2.50 + CCyB 0.0940 +
+    # SyRB 0.6751; no O-SII buffer — MPS non è O-SII 2024). Q3 2025 = 3.2743%
+    # e Q2 2025 = 3.2791% sono nello stesso KM1, quindi ora tutti esplicit.
+    # Treatment INCLUDED rolled forward dal 31-12-2024 footnote esplicito
+    # ('(*) Il dato include il CBR pari al 2,89%' = 2.8866% nel KM1).
+    # Narrative anche flagga pre-Mediobanca-merger target awaiting recalibration.
+    # TREA al 31-12-2025 è 87.71 bn — quasi raddoppiato vs 45.86 bn giu-25
+    # per acquisizione Gruppo Mediobanca (OPAS perfezionata settembre 2025).
     ("J4CP7MHCXR8DAQMKIL78", "2025-06-30"): CbrDisclosure(
-        cbr_pct_trea=0.033,
-        treatment=CbrTreatment.UNKNOWN,
-        source="Default (scrape: not_found); treatment inferred by breach-test; CBR estimated",
-        is_estimate=True,
+        cbr_pct_trea=0.032791,
+        treatment=CbrTreatment.INCLUDED,
+        source="MPS Pillar 3 31-12-2025 EU KM1 row 11 (3.2791% explicit for 30-06-2025)",
+        is_estimate=False,
     ),
     ("J4CP7MHCXR8DAQMKIL78", "2025-09-30"): CbrDisclosure(
-        cbr_pct_trea=0.033,
-        treatment=CbrTreatment.UNKNOWN,
-        source="Default (scrape: not_found); treatment inferred by breach-test; CBR estimated",
-        is_estimate=True,
+        cbr_pct_trea=0.032743,
+        treatment=CbrTreatment.INCLUDED,
+        source="MPS Pillar 3 31-12-2025 EU KM1 row 11 (3.2743% explicit for 30-09-2025)",
+        is_estimate=False,
     ),
     ("J4CP7MHCXR8DAQMKIL78", "2025-12-31"): CbrDisclosure(
-        cbr_pct_trea=0.033,
-        treatment=CbrTreatment.UNKNOWN,
-        source="Default (scrape: not_found); treatment inferred by breach-test; CBR estimated",
-        is_estimate=True,
+        cbr_pct_trea=0.032691,
+        treatment=CbrTreatment.INCLUDED,
+        source="MPS Pillar 3 31-12-2025 EU KM1 row 11: CBR 3.2691% (CCB 2.50 + CCyB 0.0940 + SyRB 0.6751; no O-SII); treatment INCLUDED rolled forward from 31-12-2024 explicit footnote. Verified 19 May 2026 — replaces prior rolled-forward value 3.27% (rounded)",
+        is_estimate=False,
     ),
-    # BPER — not_found in scrape. UNKNOWN; CBR estimate ~3.0%.
+    # MPS Q4 2024 — explicit baseline for the roll-forward.
+    ("J4CP7MHCXR8DAQMKIL78", "2024-12-31"): CbrDisclosure(
+        cbr_pct_trea=0.0289,
+        treatment=CbrTreatment.INCLUDED,
+        source="MPS Pillar 3 31-12-2024 p.14 footnote: '(*) Il dato include il Requisito Combinato di Riserva di Capitale (CBR) pari al 2,89% al 31.12.2024'",
+        is_estimate=False,
+    ),
+    # BPER — Pillar 3 31-12-2025 p.14 (KM2) + p.12 (KM1 row 11).
+    # CBR = 3.522% (CCB 2.50% + CCyB 0.055% + O-SII 0.250% + SRB 0.717%)
+    # from KM1 row 11. Treatment INCLUDED inferred via breach-test:
+    # capacity 27.35% < req 25.44% + CBR 3.52% = 28.96%; TLAC1 rows 28-31
+    # (CBR breakdown) are blank, consistent with INCLUDED convention (same
+    # presentation as MPS). KM2 rows EU-7 = 25.44% TREA, EU-8 = 18.58%.
     ("N747OI7JINV7RUUH6190", "2025-06-30"): CbrDisclosure(
         cbr_pct_trea=0.030,
         treatment=CbrTreatment.UNKNOWN,
-        source="Default (scrape: not_found); treatment inferred by breach-test; CBR estimated",
+        source="[default] BPER Pillar 3 not published at Q2 2025 reference date; CBR estimated from Q4 2025 value",
         is_estimate=True,
     ),
     ("N747OI7JINV7RUUH6190", "2025-09-30"): CbrDisclosure(
         cbr_pct_trea=0.030,
         treatment=CbrTreatment.UNKNOWN,
-        source="Default (scrape: not_found); treatment inferred by breach-test; CBR estimated",
+        source="[default] BPER Pillar 3 not published at Q3 2025 reference date; CBR estimated from Q4 2025 value",
         is_estimate=True,
     ),
     ("N747OI7JINV7RUUH6190", "2025-12-31"): CbrDisclosure(
-        cbr_pct_trea=0.030,
-        treatment=CbrTreatment.UNKNOWN,
-        source="Default (scrape: not_found); treatment inferred by breach-test; CBR estimated",
-        is_estimate=True,
-    ),
-    # Mediobanca — Pillar 3 dicembre 2025 p.63 explicit: "MREL-TREA: 24,44%
-    # (incl. CBR)". CBR components per Mediobanca press release (ECB 2025
-    # capital requirement): CCB 2.5% + O-SII 0.25% + SyRB 0.8% + CCyB 0.14%
-    # = 3.69%. So req_ex_cbr = 24.44 − 3.69 = 20.75%.
-    ("PSNL19R2RXX5U3QWHI44", "2025-06-30"): CbrDisclosure(
-        cbr_pct_trea=0.0369,
+        cbr_pct_trea=0.03522,
         treatment=CbrTreatment.INCLUDED,
-        source="Mediobanca Pillar 3 30-06-2025 (treatment); press release 2025 (CBR components — roll-back)",
-        is_estimate=True,  # CBR value rolled back from Q4 2025
+        source="BPER Pillar 3 31-12-2025 p.12 KM1 row 11: CBR = 3.522% (CCB 2.50 + CCyB 0.055 + O-SII 0.250 + SRB 0.717); treatment INCLUDED inferred by breach-test (capacity 27.35 < req 25.44 + CBR 3.52 = 28.96); TLAC1 rows 28-31 blank consistent with INCLUDED",
+        is_estimate=False,
+    ),
+    # Mediobanca — Pillar 3 dicembre 2025 p.63 + EU KM1 row 11 (verified 19 May
+    # 2026 on PDF dec 2025): CBR = 3.4382% al 31-12-2025 (CCB 2.50 + CCyB 0.1499
+    # + SyRB 0.7884 + O-SII 0.00). L'O-SII è sceso a zero vs sept 2025 (era
+    # 0.25%) per riallocazione/macro-prudential decision dell'autorità. Quindi
+    # req_ex_cbr = 24.44 − 3.44 = 21.00% (era erroneamente 20.75% basato sul
+    # vecchio CBR 3.69% del Q2 2025). Q2 2025 = 3.6822%, Q3 2025 = 3.7429%.
+    ("PSNL19R2RXX5U3QWHI44", "2025-06-30"): CbrDisclosure(
+        cbr_pct_trea=0.036822,
+        treatment=CbrTreatment.INCLUDED,
+        source="Mediobanca Pillar 3 31-12-2025 EU KM1 row 11 (3.6822% explicit for 30-06-2025)",
+        is_estimate=False,
     ),
     ("PSNL19R2RXX5U3QWHI44", "2025-09-30"): CbrDisclosure(
-        cbr_pct_trea=0.0369,
+        cbr_pct_trea=0.037429,
         treatment=CbrTreatment.INCLUDED,
-        source="Mediobanca Pillar 3 (treatment rolled forward); press release 2025 (CBR components)",
-        is_estimate=True,
+        source="Mediobanca Pillar 3 31-12-2025 EU KM1 row 11 (3.7429% explicit for 30-09-2025)",
+        is_estimate=False,
     ),
     ("PSNL19R2RXX5U3QWHI44", "2025-12-31"): CbrDisclosure(
-        cbr_pct_trea=0.0369,
+        cbr_pct_trea=0.034382,
         treatment=CbrTreatment.INCLUDED,
-        source="Mediobanca Pillar 3 31-12-2025 p.63 ('24,44% incl. CBR') + press release 2025 (CCB 2.5 + O-SII 0.25 + SyRB 0.8 + CCyB 0.14)",
+        source="Mediobanca Pillar 3 31-12-2025 EU KM1 row 11: CBR 3.4382% (CCB 2.50 + CCyB 0.1499 + SyRB 0.7884 + O-SII 0.00); verified 19 May 2026 — corrects prior value 3.69% (was Q2 2025 carried forward in error)",
         is_estimate=False,  # CBR value explicit from press release
     ),
     # Iccrea — Pillar 3 explicit: 26.03% INCLUDES CBR of 3.59%.
@@ -319,6 +344,78 @@ CBR_DISCLOSURES: Final[dict[tuple[str, str], CbrDisclosure]] = {
         treatment=CbrTreatment.INCLUDED,
         source="BBVA Pillar 3 2025 footnote (manual entry)",
         is_estimate=True,
+    ),
+    # =========================================================================
+    # CLUSTER 2 — EU peers of similar size (CdA presentation 2026-05).
+    # =========================================================================
+    # AIB Group plc (Ireland) — Pillar 3 31-12-2025 p.6 EN explicit:
+    # "The current MREL requirement for the Group is the higher of 23.05% of
+    # TREA (28.49% including the Combined Buffer Requirement) and..."
+    # => req_ex_cbr 23.05%, req_with_cbr 28.49%, CBR = 28.49 - 23.05 = 5.44%.
+    # Treatment ON_TOP confirmed: 23.05 + 5.44 = 28.49 exactly.
+    ("635400AKJBGNS5WNQL34", "2025-06-30"): CbrDisclosure(
+        cbr_pct_trea=0.0544,
+        treatment=CbrTreatment.ON_TOP,
+        source="AIB Pillar 3 (treatment rolled back from 31-12-2025)",
+        is_estimate=True,
+    ),
+    ("635400AKJBGNS5WNQL34", "2025-12-31"): CbrDisclosure(
+        cbr_pct_trea=0.0544,
+        treatment=CbrTreatment.ON_TOP,
+        source="AIB Pillar 3 31-12-2025 EN p.6: 'MREL = higher of 23.05% TREA (28.49% including CBR) and...' => CBR = 5.44%, ON_TOP",
+        is_estimate=False,
+    ),
+    # Bank of Ireland Group plc (Ireland) — Pillar 3 31-12-2025 not yet
+    # published as of 12-May-2026 (BoI publishes semi-annual: H1 2025 + FY 2025
+    # expected Mar-Apr 2026). Placeholder uses Q4 2024 disclosure (assumed
+    # ON_TOP per Irish convention; CBR value to be confirmed when FY 2025 P3
+    # is published — currently 4% estimate consistent with AIB neighbor).
+    ("635400C8EK6DRI12LJ39", "2025-06-30"): CbrDisclosure(
+        cbr_pct_trea=0.040,
+        treatment=CbrTreatment.UNKNOWN,
+        source="Bank of Ireland Pillar 3 Q4 2025 pending (expected Mar-Apr 2026; scrape: not_found); default treatment UNKNOWN, CBR estimated as Irish neighbor",
+        is_estimate=True,
+    ),
+    ("635400C8EK6DRI12LJ39", "2025-12-31"): CbrDisclosure(
+        cbr_pct_trea=0.040,
+        treatment=CbrTreatment.UNKNOWN,
+        source="Bank of Ireland Pillar 3 Q4 2025 pending (expected Mar-Apr 2026; scrape: not_found); default treatment UNKNOWN, CBR estimated as Irish neighbor",
+        is_estimate=True,
+    ),
+    # Belfius Bank (Belgium) — Pillar 3 31-12-2025 p.39 EN explicit:
+    # "MREL requirement on a consolidated basis is set at 23.68% of TREA ...
+    # combined buffer requirement (CBR) ... at 5.23% of TREA for Belfius
+    # currently" and "binding target of 28.91% (including the CBR)".
+    # 23.68 + 5.23 = 28.91 => ON_TOP confirmed.
+    ("A5GWLFH3KM7YV2SFQL84", "2025-06-30"): CbrDisclosure(
+        cbr_pct_trea=0.0523,
+        treatment=CbrTreatment.ON_TOP,
+        source="Belfius Pillar 3 (treatment rolled back from 31-12-2025)",
+        is_estimate=True,
+    ),
+    ("A5GWLFH3KM7YV2SFQL84", "2025-12-31"): CbrDisclosure(
+        cbr_pct_trea=0.0523,
+        treatment=CbrTreatment.ON_TOP,
+        source="Belfius Pillar 3 31-12-2025 EN p.39: 'MREL 23.68% TREA + CBR 5.23% = 28.91% binding target with CBR' => ON_TOP",
+        is_estimate=False,
+    ),
+    # Banco de Sabadell, S.A. (Spain) — Pillar 3 31-12-2025 p.87 EN explicit
+    # footnote: "(1) The MREL and subordination requirements expressed in
+    # terms of the TREA include the Combined Buffer Requirement (CBR) of
+    # 3.50%, as the own funds used by the Institution to meet the CBR are
+    # not eligible..." Narrative confirms: "The MREL requirement is 22.14%
+    # of TREA" (i.e. req ex CBR = 25.64 - 3.50 = 22.14 ✓).
+    ("SI5RG2M0WQQLZCXKRM20", "2025-06-30"): CbrDisclosure(
+        cbr_pct_trea=0.0350,
+        treatment=CbrTreatment.INCLUDED,
+        source="Sabadell Pillar 3 (treatment rolled back from 31-12-2025)",
+        is_estimate=True,
+    ),
+    ("SI5RG2M0WQQLZCXKRM20", "2025-12-31"): CbrDisclosure(
+        cbr_pct_trea=0.0350,
+        treatment=CbrTreatment.INCLUDED,
+        source="Sabadell Pillar 3 31-12-2025 EN p.87 footnote (1): 'requirements include the CBR of 3.50%' (req incl-CBR 25.64% = ex-CBR 22.14% + CBR 3.50%) => INCLUDED",
+        is_estimate=False,
     ),
 }
 

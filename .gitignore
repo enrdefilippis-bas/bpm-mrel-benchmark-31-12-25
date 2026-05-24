@@ -35,3 +35,14 @@ htmlcov/
 debug_*.py
 test_intesa_parser.py
 PARSER_PLANNING_BRIEF.txt
+
+# Excel deliverables (generati on-demand, non parte del runtime app)
+MREL_CDA_*.xlsx
+~$*.xlsx
+~$*.docx
+*.tmp.xlsx
+dashboard_mrel_cda_*.html
+
+# Documenti deck CdA (mantenuti localmente, non nel repo pubblico)
+docs/presentazione_*.docx
+docs/presentazione_*.pptx

@@ -52,6 +52,8 @@ class Source(str, Enum):
     PDF_MEDIOLANUM = "pdf-mediolanum"
     PDF_ICCREA = "pdf-iccrea"
     PDF_CASSA_CENTRALE = "pdf-cassa-centrale"
+    PDF_AIB = "pdf-aib"
+    PDF_BPM = "pdf-bpm"
     P3_DATAHUB = "p3-datahub"
 
 

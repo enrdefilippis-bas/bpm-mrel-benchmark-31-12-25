@@ -153,6 +153,61 @@ ITALIAN_OSII_RESOLUTION = PeerSet(
 )
 
 
+# =============================================================================
+# CdA presentation peer sets (May 2026) — frozen, methodology approved by
+# Enrico. Both are LEI whitelists (stable, no name-hint drift).
+# =============================================================================
+
+# Cluster 1 — Italian resolution-entity peers for the CdA presentation.
+# Selected on: (i) Italian parent group, (ii) resolution entity standalone
+# (NOT a subsidiary of a foreign group — BNL/Crédit Agricole Italia/Mediobanca
+# Premier excluded), (iii) Pillar 3 with full EU KM2 + TLAC1 + TLAC3 templates
+# (ground-truth verified on BPM, MPS Q4 2024). Includes MPS even though it
+# is NOT on the 2024 O-SII list, because it publishes a full MREL Pillar 3
+# and is the natural domestic comparator for BPM.
+ITALIAN_PEERS_CDA = PeerSet(
+    key="italian_peers_cda",
+    label="Italian peers — CdA cluster 1",
+    description=(
+        "8 Italian resolution-entity peers with full MREL disclosure. "
+        "Includes MPS (not on 2024 O-SII list but full MREL filer). "
+        "Excludes BNL/CAI/Mediobanca Premier (subsidiaries of cross-border groups)."
+    ),
+    leis=(
+        "815600E4E6DCD2D25E30",  # Banco BPM (anchor)
+        "549300TRUWO2CD2G5692",  # UniCredit S.p.A.
+        "2W8N8UU78PMDQKZENC08",  # Intesa Sanpaolo S.p.A.
+        "J4CP7MHCXR8DAQMKIL78",  # Banca Monte dei Paschi di Siena S.p.A.
+        "N747OI7JINV7RUUH6190",  # BPER Banca S.p.A.
+        "PSNL19R2RXX5U3QWHI44",  # Mediobanca - Banca di Credito Finanziario S.p.A.
+        "NNVPP80YIZGEY2314M97",  # ICCREA Banca S.p.A.
+        "LOO0AWXR8GF142JCO404",  # Cassa Centrale Banca
+    ),
+)
+
+
+# Cluster 2 — EU peers of comparable size (130-300B TEM ≈ BPM 204B), Eurozone
+# only, commercial-retail business model. Excludes:
+# - subsidiaries (ING Belgie -> ING Groep NL)
+# - non-Eurozone (DNB Norway, Swedbank Sweden, PKO Poland)
+# - universal/bancassurance too large (KBC 380B)
+# - too small (Bankinter 124B < 130B floor)
+EU_PEERS_CDA = PeerSet(
+    key="eu_peers_cda",
+    label="EU peers — CdA cluster 2 (similar size, Eurozone)",
+    description=(
+        "4 EU resolution-entity peers of comparable size (130-300B TEM) "
+        "in the Eurozone with commercial-retail business model."
+    ),
+    leis=(
+        "635400C8EK6DRI12LJ39",  # Bank of Ireland Group plc (IE, 141B)
+        "635400AKJBGNS5WNQL34",  # AIB Group plc (IE, 149B)
+        "A5GWLFH3KM7YV2SFQL84",  # Belfius Bank (BE, 191B)
+        "SI5RG2M0WQQLZCXKRM20",  # Banco de Sabadell, S.A. (ES, 246B)
+    ),
+)
+
+
 def resolve_eu_osii_similar_size(banks: "pandas.DataFrame") -> list[str]:
     """Dynamically resolve EU O-SIIs with similar size (150-300B TEM).
 
@@ -181,6 +236,8 @@ EU_OSII_SIMILAR_SIZE = PeerSet(
 
 
 ALL_PEER_SETS: tuple[PeerSet, ...] = (
+    ITALIAN_PEERS_CDA,            # Cluster 1 — primary peer set for CdA narrative
+    EU_PEERS_CDA,                 # Cluster 2 — EU peers of similar size for CdA
     DEFAULT_BPM_PEERS,
     ITALIAN_SIS,
     G_SIBS,

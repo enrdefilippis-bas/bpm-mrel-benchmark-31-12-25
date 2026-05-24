@@ -1,33 +1,48 @@
 {
   "entity_name": "BPER Banca S.p.A.",
-  "source_pdf": "https://group.bper.it/documents/133577364/2799448621/26.02.05+BPER+Risultati+2025+ITA.pdf",
-  "notes": "Ratios as decimals. Amounts in EUR. Partial data from FY2025 press release (26 Feb 2026). Pillar 3 Q4 2025 not yet published. Total assets 204.6B include Banca Popolare di Sondrio. TREA estimated from CET1 ratio footnote. Absolute amounts are approximations.",
+  "source_pdf": "https://group.bper.it/en/investors/investor-relations/regulatory-capital-disclosures/pillar3-2025",
+  "notes": "Ratios as decimals (0.2735 = 27.35%). Amounts in EUR (converted from EUR millions in PDF). Extracted from Pillar 3 al 31.12.2025 (Italian language PDF, 362 pages). KM2 template at p.14, TLAC1 at p.15-16, TLAC3b at p.17. CBR treatment INCLUDED (inferred via breach-test: capacity 27.35% < req 25.44% + CBR 3.52% = 28.96%; rows 28-31 blank in TLAC1 consistent with INCLUDED convention). CBR = 3.522% from KM1 row 11 (CCB 2.50% + CCyB 0.055% + O-SII 0.250% + SRB 0.717%). TLAC3b ranking: col 1=Capitale, col 2=Subordinate, col 4=SNP, col 5=Non garantite, col 6=Depositi non garantiti. Maturity buckets derived from TLAC3b rows 6-10 (col c0050 per bucket). Note: BPER is not a G-SII; TLAC columns b and c not published.",
   "reference_dates": {
     "2025-12-31": {
       "km2": {
-        "mrel_total_amount":            null,
-        "trea":                         null,
-        "tem":                          null,
+        "mrel_total_amount":            21916000000,
+        "trea":                         80142000000,
+        "tem":                          214300000000,
         "mrel_pct_trea":                0.2735,
         "subord_pct_trea":              0.2107,
-        "mrel_pct_tem":                 null,
-        "subord_pct_tem":               null,
-        "mrel_requirement_trea":        0.2546,
-        "mrel_subord_requirement_trea": 0.1860,
+        "mrel_pct_tem":                 0.1023,
+        "subord_pct_tem":               0.0788,
+        "mrel_requirement_trea":        0.2544,
+        "mrel_subord_requirement_trea": 0.1858,
         "mrel_requirement_tem":         0.0652,
         "mrel_subord_requirement_tem":  0.0652
       },
       "tlac1": {
-        "cet1":                  null,
-        "at1":                   null,
-        "tier2":                 null,
-        "subord_own_issuance":   null,
-        "subord_intra_group":    null,
-        "subord_grandfathered":  null,
-        "subord_t2_residual":    null,
-        "senior_pre_cap":        null,
-        "senior_grandfathered":  null,
-        "senior_post_cap":       null
+        "cet1":                  11882000000,
+        "at1":                   1865000000,
+        "tier2":                 1636000000,
+        "subord_own_issuance":   1503000000,
+        "subord_intra_group":    0,
+        "subord_grandfathered":  0,
+        "subord_t2_residual":    0,
+        "senior_pre_cap":        4432000000,
+        "senior_grandfathered":  1231000000,
+        "senior_post_cap":       5664000000
+      },
+      "tlac3_maturity": {
+        "total_eligible":     23572000000,
+        "maturity_1_to_2y":   1275000000,
+        "maturity_2_to_5y":   3753000000,
+        "maturity_5_to_10y":  2372000000,
+        "maturity_10y_plus":  2542000000,
+        "maturity_perpetual": 13630000000
+      },
+      "tlac3_ranking": {
+        "1": 13630000000,
+        "2": 2775000000,
+        "4": 1503000000,
+        "5": 4430000000,
+        "6": 1233000000
       }
     }
   }

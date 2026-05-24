@@ -1,0 +1,47 @@
+{
+  "entity_name": "AIB Group plc",
+  "source_pdf": "https://aib.ie/content/dam/frontdoor/investorrelations/docs/resultscentre/pillar3/AIB-Group-plc-Q4-2025-Pillar-3-Disclosures.pdf",
+  "notes": "Ratios as decimals (0.3518 = 35.18%). Amounts in EUR (converted from EUR millions in PDF). Extracted from Pillar 3 as at 31.12.2025 (English language PDF). AIB calls the resolution-entity creditor ranking template 'EU TLAC3b' but the scope is identical to K_97.00 (resolution entity). Mapped accordingly. Three insolvency ranks declared: 1 = Equity (most junior), 2 = Subordinated claims, 3 = Unsecured claims (most senior).",
+  "reference_dates": {
+    "2025-12-31": {
+      "km2": {
+        "mrel_total_amount":            19059000000,
+        "trea":                         54178000000,
+        "tem":                          152781000000,
+        "mrel_pct_trea":                0.3518,
+        "subord_pct_trea":              0.3518,
+        "mrel_pct_tem":                 0.1247,
+        "subord_pct_tem":               0.1247,
+        "mrel_requirement_trea":        0.2305,
+        "mrel_subord_requirement_trea": 0.1350,
+        "mrel_requirement_tem":         0.0752,
+        "mrel_subord_requirement_tem":  0.0752
+      },
+      "tlac1": {
+        "cet1":                  8943000000,
+        "at1":                   1309000000,
+        "tier2":                 1676000000,
+        "subord_own_issuance":   7136000000,
+        "subord_intra_group":    0,
+        "subord_grandfathered":  0,
+        "subord_t2_residual":    0,
+        "senior_pre_cap":        0,
+        "senior_grandfathered":  0,
+        "senior_post_cap":       0
+      },
+      "tlac3_maturity": {
+        "total_eligible":     20785000000,
+        "maturity_1_to_2y":   750000000,
+        "maturity_2_to_5y":   3351000000,
+        "maturity_5_to_10y":  4425000000,
+        "maturity_10y_plus":  300000000,
+        "maturity_perpetual": 11959000000
+      },
+      "tlac3_ranking": {
+        "1": 10634000000,
+        "2": 3011000000,
+        "3": 7140000000
+      }
+    }
+  }
+}

@@ -1,9 +1,11 @@
 """Bank-specific Pillar 3 parsers for banks missing from the EBA export."""
 from __future__ import annotations
 
+from .aib import AIBParser
 from .base import BankMeta, BaseBankParser
 from .bbva import BBVAParser
 from .bper import BPERParser
+from .bpm import BPMParser
 from .cassa_centrale import CassaCentraleParser
 from .credem import CredemParser
 from .credit_agricole import CreditAgricoleParser
@@ -28,11 +30,15 @@ ALL_PARSERS: tuple[type[BaseBankParser], ...] = (
     MediolanumParser,
     ICCREAParser,
     CassaCentraleParser,
+    AIBParser,
+    BPMParser,
 )
 
 __all__ = [
     "BankMeta",
     "BaseBankParser",
+    "AIBParser",
+    "BPMParser",
     "IntesaParser",
     "UniCreditParser",
     "BBVAParser",

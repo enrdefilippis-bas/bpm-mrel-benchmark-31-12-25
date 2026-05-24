@@ -67,6 +67,29 @@ TLAC1_CELLS: dict[str, str] = {
 }
 
 
+# TLAC3 (K_97.00) — resolution-entity tables: maturity profile + creditor
+# ranking. Maturity uses column 0050 ("Sum of 1 to n" across ranks); ranking
+# uses column 0010 with the rank tag carried in the open_key.
+TLAC3_MATURITY_CELLS: dict[str, str] = {
+    "total_eligible":     "0050",   # row 0050 col 0050 — denominator (sum of ranks)
+    "maturity_1_to_2y":   "0060",
+    "maturity_2_to_5y":   "0070",
+    "maturity_5_to_10y":  "0080",
+    "maturity_10y_plus":  "0090",
+    "maturity_perpetual": "0100",
+}
+TLAC3_MATURITY_COL = "0050"
+
+# TLAC3 creditor ranking — row 0050, col 0010, with open_key tagging the rank.
+TLAC3_RANKING_ROW = "0050"
+TLAC3_RANKING_COL = "0010"
+
+# TLAC3b (K_98.00) — non-resolution-entity creditor ranking. Same col/open_key
+# pattern as TLAC3 but on row 0020.
+TLAC3B_RANKING_ROW = "0020"
+TLAC3B_RANKING_COL = "0010"
+
+
 @dataclass(frozen=True)
 class BankMeta:
     """Static metadata about a bank handled by a :class:`BaseBankParser`."""
@@ -140,6 +163,70 @@ class BaseBankParser(ABC):
                     value=float(value), unit=UnitType.AMOUNT_EUR, now=now,
                 ))
 
+            # TLAC3 (K_97.00) — resolution entity maturity ladder (col 0050).
+            # Layout in JSON:
+            #   "tlac3_maturity": {
+            #       "total_eligible": ..., "maturity_1_to_2y": ...,
+            #       "maturity_2_to_5y": ..., "maturity_5_to_10y": ...,
+            #       "maturity_10y_plus": ..., "maturity_perpetual": ...
+            #   }
+            tlac3_mat = day.get("tlac3_maturity") or {}
+            for key, row_code in TLAC3_MATURITY_CELLS.items():
+                value = tlac3_mat.get(key)
+                if value is None:
+                    continue
+                rows.append(cls._fact_row(
+                    entity_name=entity_name, ref_date=ref_date,
+                    template=Template.TLAC3.value,
+                    row_code=row_code, col_code=TLAC3_MATURITY_COL,
+                    value=float(value), unit=UnitType.AMOUNT_EUR, now=now,
+                    open_key="",
+                ))
+
+            # TLAC3 creditor ranking — resolution entity. JSON layout:
+            #   "tlac3_ranking": {"1": amount_rank1, "2": amount_rank2, ...}
+            # open_key carries the canonical "Ranking in insolvency = Rank N -
+            # Ranking in insolvency (master scale)" tag so creditor_rank_breakdown
+            # in core/metrics.py picks it up.
+            tlac3_rank = day.get("tlac3_ranking") or {}
+            for rank_key, value in tlac3_rank.items():
+                if value is None:
+                    continue
+                try:
+                    rank_n = int(rank_key)
+                except (TypeError, ValueError):
+                    continue
+                rows.append(cls._fact_row(
+                    entity_name=entity_name, ref_date=ref_date,
+                    template=Template.TLAC3.value,
+                    row_code=TLAC3_RANKING_ROW, col_code=TLAC3_RANKING_COL,
+                    value=float(value), unit=UnitType.AMOUNT_EUR, now=now,
+                    open_key=(
+                        f"Ranking in insolvency = Rank {rank_n} - "
+                        f"Ranking in insolvency (master scale)"
+                    ),
+                ))
+
+            # TLAC3b creditor ranking — non-resolution entity (subsidiary).
+            tlac3b_rank = day.get("tlac3b_ranking") or {}
+            for rank_key, value in tlac3b_rank.items():
+                if value is None:
+                    continue
+                try:
+                    rank_n = int(rank_key)
+                except (TypeError, ValueError):
+                    continue
+                rows.append(cls._fact_row(
+                    entity_name=entity_name, ref_date=ref_date,
+                    template=Template.TLAC3B.value,
+                    row_code=TLAC3B_RANKING_ROW, col_code=TLAC3B_RANKING_COL,
+                    value=float(value), unit=UnitType.AMOUNT_EUR, now=now,
+                    open_key=(
+                        f"Ranking in insolvency = Rank {rank_n} - "
+                        f"Ranking in insolvency (master scale)"
+                    ),
+                ))
+
         if not rows:
             return empty_facts()
 
@@ -187,7 +274,7 @@ class BaseBankParser(ABC):
     def _fact_row(
         cls, *, entity_name: str, ref_date: pd.Timestamp, template: str,
         row_code: str, col_code: str, value: float, unit: UnitType,
-        now: pd.Timestamp,
+        now: pd.Timestamp, open_key: str = "",
     ) -> dict:
         return {
             "entity_lei":     cls.meta.lei,
@@ -199,7 +286,7 @@ class BaseBankParser(ABC):
             "row_name":       "",
             "col_code":       col_code,
             "col_name":       "",
-            "open_key":       "",
+            "open_key":       open_key,
             "raw_value":      value,
             "value":          value,
             "unit":           unit.value,
