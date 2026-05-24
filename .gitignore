@@ -41,7 +41,7 @@ MREL_CDA_*.xlsx
 ~$*.xlsx
 ~$*.docx
 *.tmp.xlsx
-dashboard_mrel_cda_*.html
+# NB: dashboard_mrel_cda_*.html è ora tracciato nel repo perché serve al Docker build su Render
 
 # Documenti deck CdA (mantenuti localmente, non nel repo pubblico)
 docs/presentazione_*.docx

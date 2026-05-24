@@ -1,20 +1,19 @@
 # Render.com Infrastructure-as-Code config
 # Doc: https://render.com/docs/blueprint-spec
 #
-# Quando colleghi questo repo a Render, il servizio sotto "services:" viene creato
-# automaticamente. Render usa il Dockerfile presente nella root del repo.
+# Serve la dashboard HTML statica del CdA (dashboard_mrel_cda_2025q4.html)
+# via nginx leggero. Il Dockerfile rigenera la dashboard a ogni build dai
+# dati in data/processed/ così resta sempre allineata al codice.
 
 services:
   - type: web
     name: bpm-mrel-benchmark
     env: docker
-    region: frankfurt          # vicino a Italia per latenza minima
-    plan: free                 # Render Free tier (servizio si spegne dopo 15 min idle)
+    region: frankfurt
+    plan: free
     dockerfilePath: ./Dockerfile
-    autoDeploy: true           # ogni push su main triggera nuovo deploy
-    healthCheckPath: /         # Dash serve la home in /
+    autoDeploy: true
+    healthCheckPath: /healthz
     envVars:
       - key: PORT
-        value: "8080"          # Dockerfile espone 8080
-      - key: PYTHONUNBUFFERED
-        value: "1"             # log immediati su Render dashboard
+        value: "8080"

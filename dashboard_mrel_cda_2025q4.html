@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MREL Peer Benchmark — 31-12-2025</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#061629;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#1f2937;display:flex;min-height:100vh}
+/* SIDEBAR */
+.sidebar{width:264px;min-width:264px;background:#13315c;color:#fff;padding:24px 20px;box-shadow:2px 0 8px rgba(0,0,0,.2);display:flex;flex-direction:column;gap:0}
+.sidebar h1{font-size:18px;color:#fff;margin-bottom:4px}
+.sidebar .subtitle{color:#9aa4b1;font-size:11px;margin-bottom:20px}
+.sidebar .meta{color:#9aa4b1;font-size:11px;margin-bottom:20px}
+.section-title{color:#9aa4b1;font-size:10px;letter-spacing:.1em;text-transform:uppercase;margin:20px 0 8px}
+.nav-link{display:block;padding:8px 10px;margin:2px 0;color:#e6ecf2;text-decoration:none;border-radius:4px;font-size:13px;cursor:pointer;border:none;background:none;width:100%;text-align:left}
+.nav-link:hover{background:rgba(255,255,255,.06)}
+.nav-link.active{background:rgba(230,168,23,.16);color:#f3c96a;border-left:3px solid #e6a817;padding-left:7px}
+.control-label{color:#e6ecf2;font-size:12px;margin:12px 0 6px}
+select,input[type=range]{width:100%;background:#0b2545;color:#e6ecf2;border:1px solid #4a6a8a;border-radius:4px;padding:6px 10px;font-size:12px;font-family:inherit;cursor:pointer}
+select:focus{outline:none;border-color:#e6a817}
+.radio-group{display:flex;flex-direction:column;gap:4px}
+.radio-group label{color:#e6ecf2;font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer}
+/* MAIN */
+.main{flex:1;padding:28px 36px;background:#f5f7fa;overflow-x:auto}
+.page{display:none}.page.active{display:block}
+.page-header{margin-bottom:20px}
+.page-header h2{color:#0b2545;font-size:22px;margin-bottom:4px}
+.page-header p{color:#5b6572;font-size:13px}
+/* CARDS */
+.card{background:#fff;border-radius:6px;padding:20px 24px;box-shadow:0 1px 3px rgba(0,0,0,.06);margin-bottom:16px}
+.card h3{color:#0b2545;font-size:15px;margin-bottom:4px}
+.card .caption{color:#5b6572;font-size:12px;margin-bottom:14px}
+/* BADGE GRID */
+.badge-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:16px}
+.badge{background:#fff;border-radius:6px;padding:14px 16px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.badge .b-label{color:#5b6572;font-size:11px;letter-spacing:.05em;text-transform:uppercase;margin-bottom:2px}
+.badge .b-value{color:#0b2545;font-size:20px;font-weight:700;line-height:1.2}
+.badge .b-sub{color:#5b6572;font-size:11px;margin-top:2px}
+.badge.bpm .b-value{color:#c0362c}
+/* CONTROLS ROW */
+.ctrl-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:12px}
+.ctrl-row label{font-size:12px;color:#5b6572}
+.ctrl-row select{width:auto;min-width:180px}
+/* TWO-COLS */
+.two-col{display:flex;gap:16px;flex-wrap:wrap}
+.two-col>div{flex:1;min-width:0}
+/* META */
+.meta-line{color:#5b6572;font-size:11px;font-style:italic;margin-top:6px}
+/* Per-page sidebar filter panels */
+.page-filters{margin-top:0}
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <h1>MREL Benchmark</h1>
+  <div class="subtitle">BPM vs peer banks · EBA Pillar 3</div>
+  <div class="meta" id="meta-line">Loading…</div>
+
+  <div class="section-title">Pages</div>
+  <button class="nav-link active" onclick="showPage('universe',this)">Universe</button>
+  <button class="nav-link" onclick="showPage('cushion',this)">Cushion</button>
+  <button class="nav-link" onclick="showPage('composition',this)">Composition</button>
+  <button class="nav-link" onclick="showPage('maturity',this)">Maturity</button>
+  <button class="nav-link" onclick="showPage('creditor',this)">Creditor rank</button>
+
+  <div class="section-title">Filters</div>
+  <div class="control-label">Peer set</div>
+  <select id="peer-set" onchange="refreshAll()">
+    <option value="c1">Italian peers — CdA cluster 1</option>
+    <option value="c2">EU peers — CdA cluster 2</option>
+    <option value="both">Cluster 1 + 2 (tutti)</option>
+  </select>
+
+  <!-- Per-page filter panels — only one visible at a time -->
+  <div id="filters-universe" class="page-filters">
+    <div class="control-label">Highlight</div>
+    <div class="radio-group">
+      <label><input type="radio" name="univ-highlight" value="peer" checked onchange="renderUniverse()"> CdA peer set</label>
+      <label><input type="radio" name="univ-highlight" value="country" onchange="renderUniverse()"> Country</label>
+    </div>
+  </div>
+
+  <div id="filters-cushion" class="page-filters" style="display:none">
+    <div class="control-label">Metrica cushion</div>
+    <select id="cushion-metric" onchange="renderCushion()">
+      <option value="mrel_ex">MREL % TREA vs req (ex-CBR)</option>
+      <option value="mrel_with">MREL % TREA vs OCR (with-CBR)</option>
+      <option value="subord_ex">Subord % TREA vs req (ex-CBR)</option>
+      <option value="subord_with">Subord % TREA vs req+CBR</option>
+      <option value="tem">MREL % TEM vs req TEM</option>
+      <option value="subord_ratio">Subordination ratio</option>
+    </select>
+  </div>
+
+  <div id="filters-composition" class="page-filters" style="display:none">
+    <div class="control-label">View</div>
+    <div class="radio-group">
+      <label><input type="radio" name="comp-mode" value="pct" checked onchange="renderComposition()"> 100% mix</label>
+      <label><input type="radio" name="comp-mode" value="eur" onchange="renderComposition()"> €bn absolute</label>
+    </div>
+    <div class="control-label">Sort by</div>
+    <select id="comp-sort" onchange="renderComposition()">
+      <option value="subord_share">Subordination share</option>
+      <option value="own_funds_share">Own funds share</option>
+      <option value="senior_share">Senior share</option>
+      <option value="total">Total stack (€)</option>
+      <option value="name">Bank name (A→Z)</option>
+    </select>
+  </div>
+
+  <div id="filters-maturity" class="page-filters" style="display:none">
+    <div class="control-label">Sort by</div>
+    <select id="mat-sort" onchange="renderMaturity()">
+      <option value="s1_2y">1–2y share</option>
+      <option value="s2_5y">2–5y share</option>
+      <option value="s5_10y">5–10y share</option>
+      <option value="s10y">10y+ share</option>
+      <option value="sperp">Perpetual share</option>
+      <option value="total">Total eligible (€)</option>
+      <option value="name">Bank name (A→Z)</option>
+    </select>
+  </div>
+
+  <div id="filters-creditor" class="page-filters" style="display:none">
+    <div class="control-label">View</div>
+    <select id="crd-mode" onchange="renderCreditor()">
+      <option value="pct">100% mix</option>
+      <option value="eur">€bn assoluto</option>
+    </select>
+    <div class="control-label">Sort by</div>
+    <select id="crd-sort" onchange="renderCreditor()">
+      <option value="total_desc">Total eligible (€ desc)</option>
+      <option value="senior">Senior share (Rank 1)</option>
+      <option value="subord">Deep-subord share (Rank ≥ 4)</option>
+      <option value="name">Bank name (A→Z)</option>
+    </select>
+  </div>
+</div>
+
+<div class="main">
+  <!-- UNIVERSE PAGE -->
+  <div id="page-universe" class="page active">
+    <div class="page-header">
+      <h2>Universe — Full EU Pillar 3 population</h2>
+      <p>Ogni punto = una banca con disclosure MREL nel Pillar 3 EBA (+ PDF). Asse X: TREA assoluto (scala log). Asse Y: MREL/TREA capacity. BPM in rosso, peer set CdA in blu scuro, altri in grigio. Ref: 31-12-2025.</p>
+    </div>
+    <div class="card">
+      <div id="universe-chart" style="min-height:500px"></div>
+      <div class="meta-line">Fonte: EBA Pillar 3 cell-level export (p3mreldata_2025q4.xlsx) + manual entries da PDF. 25 banche con TREA ≥ 12bn e MREL/TREA disponibili al 31-12-2025 (escluse banche con TREA < 12bn).</div>
+    </div>
+  </div>
+
+  <!-- CUSHION PAGE -->
+  <div id="page-cushion" class="page">
+    <div class="page-header">
+      <h2>Cushion — MREL capacity vs requirement</h2>
+      <p>Barre per banca con capacità (blu) e requisito (marker ambra). BPM evidenziato in rosso. Ref date: 31-12-2025.</p>
+    </div>
+    <div class="badge-grid" id="cushion-badges"></div>
+    <div class="card">
+      <div id="cushion-chart-title" class="caption"></div>
+      <div id="cushion-chart" style="min-height:420px"></div>
+    </div>
+  </div>
+
+  <!-- COMPOSITION PAGE -->
+  <div id="page-composition" class="page">
+    <div class="page-header">
+      <h2>Composition — MREL stack by instrument class</h2>
+      <p>Stacked bar per classe strumento. Fonte: TLAC1 (K_91.00). BPM evidenziato.</p>
+    </div>
+    <div class="card">
+      <div class="meta-line">Fonte: K_91.00 (TLAC1) col c0010 (MREL). I totali possono differire da KM2 per deduzioni pre-cap.</div>
+      <div id="comp-chart" style="min-height:420px"></div>
+    </div>
+  </div>
+
+  <!-- MATURITY PAGE -->
+  <div id="page-maturity" class="page">
+    <div class="page-header">
+      <h2>Maturity — residual-maturity profile</h2>
+      <p>Heatmap delle quote per bucket di maturity. Più scuro = quota maggiore. Fonte: K_97.00 col c0050.</p>
+    </div>
+    <div class="card">
+      <div class="meta-line">Nota: BPER e Bank of Ireland non disponibili in questo template (Pillar 3 Q4 2025 usa TLAC3b / non ancora pubblicato).</div>
+      <div id="mat-chart" style="min-height:380px"></div>
+    </div>
+  </div>
+
+  <!-- CREDITOR RANK PAGE -->
+  <div id="page-creditor" class="page">
+    <div class="page-header">
+      <h2>Creditor ranking — MREL stack by insolvency rank</h2>
+      <p>Stacked bar per insolvency rank. Rank 1 = più senior (pagato per primo). Fonte: K_97.00 / TLAC3.</p>
+    </div>
+    <div class="card">
+      <div class="meta-line">Nota: ICCREA, Cassa Centrale, Bank of Ireland non disponibili (Pillar 3 Q4 2025 non ancora pubblicato).</div>
+      <div id="crd-chart" style="min-height:420px"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const DATA={"km2": [{"lei": "2W8N8UU78PMDQKZENC08","name": "Intesa Sanpaolo S.p.A.","is_bpm": false,"cluster": "c1","mrel_pct_trea": 0.3728,"subord_pct_trea": 0.2171,"mrel_pct_tem": 0.139,"mrel_requirement_trea_ex_cbr": 0.21,"mrel_requirement_trea_with_cbr": 0.2549,"mrel_subord_requirement_trea_ex_cbr": 0.135,"mrel_subord_requirement_trea_with_cbr": 0.1799,"mrel_requirement_tem": 0.0594,"mrel_subord_requirement_tem": 0.0594,"mrel_surplus_trea_ex_cbr_pp": 0.1628,"mrel_surplus_trea_with_cbr_pp": 0.1179,"subordination_ratio": 0.5823497854,"trea": 310201000000.0,"tem": 831920000000.0,"mrel_total_amount": 115648000000.0,"cet1_ratio": null,"total_capital_ratio": null,"leverage_ratio": null},{"lei": "549300TRUWO2CD2G5692","name": "UniCredit S.p.A.","is_bpm": false,"cluster": "c1","mrel_pct_trea": 0.3059,"subord_pct_trea": 0.2271,"mrel_pct_tem": 0.1,"mrel_requirement_trea_ex_cbr": 0.2218,"mrel_requirement_trea_with_cbr": 0.2705,"mrel_subord_requirement_trea_ex_cbr": 0.1449,"mrel_subord_requirement_trea_with_cbr": 0.1936,"mrel_requirement_tem": 0.0598,"mrel_subord_requirement_tem": 0.0598,"mrel_surplus_trea_ex_cbr_pp": 0.0841,"mrel_surplus_trea_with_cbr_pp": 0.0354,"subordination_ratio": 0.742399477,"trea": 296327000000.0,"tem": 906925000000.0,"mrel_total_amount": 90655000000.0,"cet1_ratio": null,"total_capital_ratio": null,"leverage_ratio": null},{"lei": "815600E4E6DCD2D25E30","name": "BANCO BPM SOCIETA' PER AZIONI","is_bpm": true,"cluster": "c1","mrel_pct_trea": 0.3402,"subord_pct_trea": 0.2484,"mrel_pct_tem": 0.1087,"mrel_requirement_trea_ex_cbr": 0.226,"mrel_requirement_trea_with_cbr": 0.2634,"mrel_subord_requirement_trea_ex_cbr": 0.1591,"mrel_subord_requirement_trea_with_cbr": 0.1965,"mrel_requirement_tem": 0.059,"mrel_subord_requirement_tem": 0.0582,"mrel_surplus_trea_ex_cbr_pp": 0.1142,"mrel_surplus_trea_with_cbr_pp": 0.0768,"subordination_ratio": 0.7301587302,"trea": 65278232381.0,"tem": 204304407495.0,"mrel_total_amount": 22205622311.0,"cet1_ratio": null,"total_capital_ratio": null,"leverage_ratio": null},{"lei": "J4CP7MHCXR8DAQMKIL78","name": "Banca Monte dei Paschi di Siena S.p.A.","is_bpm": false,"cluster": "c1","mrel_pct_trea": 0.2944,"subord_pct_trea": 0.2326,"mrel_pct_tem": 0.1048,"mrel_requirement_trea_ex_cbr": 0.2359,"mrel_requirement_trea_with_cbr": 0.2686,"mrel_subord_requirement_trea_ex_cbr": 0.1399,"mrel_subord_requirement_trea_with_cbr": 0.1726,"mrel_requirement_tem": 0.0643,"mrel_subord_requirement_tem": 0.0643,"mrel_surplus_trea_ex_cbr_pp": 0.0585,"mrel_surplus_trea_with_cbr_pp": 0.0258,"subordination_ratio": 0.7900815217,"trea": 46270507000.0,"tem": 130020142000.0,"mrel_total_amount": 13623571000.0,"cet1_ratio": null,"total_capital_ratio": null,"leverage_ratio": null},{"lei": "LOO0AWXR8GF142JCO404","name": "CASSA CENTRALE BANCA - CREDITO COOPERATIVO ITALIANO S.P.A.","is_bpm": false,"cluster": "c1","mrel_pct_trea": null,"subord_pct_trea": null,"mrel_pct_tem": null,"mrel_requirement_trea_ex_cbr": 0.224,"mrel_requirement_trea_with_cbr": 0.254,"mrel_subord_requirement_trea_ex_cbr": null,"mrel_subord_requirement_trea_with_cbr": null,"mrel_requirement_tem": 0.0591,"mrel_subord_requirement_tem": null,"mrel_surplus_trea_ex_cbr_pp": null,"mrel_surplus_trea_with_cbr_pp": null,"subordination_ratio": null,"trea": null,"tem": null,"mrel_total_amount": null,"cet1_ratio": null,"total_capital_ratio": null,"leverage_ratio": null},{"lei": "N747OI7JINV7RUUH6190","name": "BPER Banca S.p.A.","is_bpm": false,"cluster": "c1","mrel_pct_trea": 0.2735,"subord_pct_trea": 0.2107,"mrel_pct_tem": 0.1023,"mrel_requirement_trea_ex_cbr": 0.2192,"mrel_requirement_trea_with_cbr": 0.2544,"mrel_subord_requirement_trea_ex_cbr": 0.1506,"mrel_subord_requirement_trea_with_cbr": 0.1858,"mrel_requirement_tem": 0.0652,"mrel_subord_requirement_tem": 0.0652,"mrel_surplus_trea_ex_cbr_pp": 0.0543,"mrel_surplus_trea_with_cbr_pp": 0.0191,"subordination_ratio": 0.7703839122,"trea": 80142000000.0,"tem": 214300000000.0,"mrel_total_amount": 21916000000.0,"cet1_ratio": null,"total_capital_ratio": null,"leverage_ratio": null},{"lei": "NNVPP80YIZGEY2314M97","name": "ICCREA BANCA S.P.A.","is_bpm": false,"cluster": "c1","mrel_pct_trea": null,"subord_pct_trea": null,"mrel_pct_tem": null,"mrel_requirement_trea_ex_cbr": 0.2244,"mrel_requirement_trea_with_cbr": 0.2603,"mrel_subord_requirement_trea_ex_cbr": null,"mrel_subord_requirement_trea_with_cbr": null,"mrel_requirement_tem": 0.0633,"mrel_subord_requirement_tem": null,"mrel_surplus_trea_ex_cbr_pp": null,"mrel_surplus_trea_with_cbr_pp": null,"subordination_ratio": null,"trea": null,"tem": null,"mrel_total_amount": null,"cet1_ratio": null,"total_capital_ratio": null,"leverage_ratio": null},{"lei": "PSNL19R2RXX5U3QWHI44","name": "Mediobanca - Banca di Credito Finanziario S.p.A.","is_bpm": false,"cluster": "c1","mrel_pct_trea": 0.4304,"subord_pct_trea": 0.2194,"mrel_pct_tem": 0.1898,"mrel_requirement_trea_ex_cbr": 0.21,"mrel_requirement_trea_with_cbr": 0.2444,"mrel_subord_requirement_trea_ex_cbr": null,"mrel_subord_requirement_trea_with_cbr": null,"mrel_requirement_tem": null,"mrel_subord_requirement_tem": null,"mrel_surplus_trea_ex_cbr_pp": 0.2204,"mrel_surplus_trea_with_cbr_pp": 0.186,"subordination_ratio": 0.5097583643,"trea": 45866792000.0,"tem": 104021873000.0,"mrel_total_amount": 19742385000.0,"cet1_ratio": null,"total_capital_ratio": null,"leverage_ratio": null},{"lei": "635400AKJBGNS5WNQL34","name": "AIB Group plc","is_bpm": false,"cluster": "c2","mrel_pct_trea": 0.3518,"subord_pct_trea": 0.3518,"mrel_pct_tem": 0.1247,"mrel_requirement_trea_ex_cbr": 0.2305,"mrel_requirement_trea_with_cbr": 0.2849,"mrel_subord_requirement_trea_ex_cbr": 0.135,"mrel_subord_requirement_trea_with_cbr": 0.1894,"mrel_requirement_tem": 0.0752,"mrel_subord_requirement_tem": 0.0752,"mrel_surplus_trea_ex_cbr_pp": 0.1213,"mrel_surplus_trea_with_cbr_pp": 0.0669,"subordination_ratio": 1.0,"trea": 54178000000.0,"tem": 152781000000.0,"mrel_total_amount": 19059000000.0,"cet1_ratio": null,"total_capital_ratio": null,"leverage_ratio": null},{"lei": "635400C8EK6DRI12LJ39","name": "Bank of Ireland Group plc","is_bpm": false,"cluster": "c2","mrel_pct_trea": null,"subord_pct_trea": null,"mrel_pct_tem": null,"mrel_requirement_trea_ex_cbr": null,"mrel_requirement_trea_with_cbr": null,"mrel_subord_requirement_trea_ex_cbr": null,"mrel_subord_requirement_trea_with_cbr": null,"mrel_requirement_tem": null,"mrel_subord_requirement_tem": null,"mrel_surplus_trea_ex_cbr_pp": null,"mrel_surplus_trea_with_cbr_pp": null,"subordination_ratio": null,"trea": null,"tem": null,"mrel_total_amount": null,"cet1_ratio": null,"total_capital_ratio": null,"leverage_ratio": null},{"lei": "A5GWLFH3KM7YV2SFQL84","name": "Belfius Bank","is_bpm": false,"cluster": "c2","mrel_pct_trea": 0.3119,"subord_pct_trea": 0.2265,"mrel_pct_tem": 0.1178,"mrel_requirement_trea_ex_cbr": 0.2368,"mrel_requirement_trea_with_cbr": 0.2891,"mrel_subord_requirement_trea_ex_cbr": 0.135,"mrel_subord_requirement_trea_with_cbr": 0.1873,"mrel_requirement_tem": 0.0707,"mrel_subord_requirement_tem": 0.0707,"mrel_surplus_trea_ex_cbr_pp": 0.0751,"mrel_surplus_trea_with_cbr_pp": 0.0228,"subordination_ratio": 0.726194293,"trea": 72147771498.0,"tem": 191008901385.0,"mrel_total_amount": 22506128700.0,"cet1_ratio": null,"total_capital_ratio": null,"leverage_ratio": null},{"lei": "SI5RG2M0WQQLZCXKRM20","name": "Banco de Sabadell, S.A.","is_bpm": false,"cluster": "c2","mrel_pct_trea": 0.2762,"subord_pct_trea": 0.2349,"mrel_pct_tem": 0.09,"mrel_requirement_trea_ex_cbr": 0.2214,"mrel_requirement_trea_with_cbr": 0.2564,"mrel_subord_requirement_trea_ex_cbr": 0.1584,"mrel_subord_requirement_trea_with_cbr": 0.1934,"mrel_requirement_tem": 0.0639,"mrel_subord_requirement_tem": 0.0639,"mrel_surplus_trea_ex_cbr_pp": 0.0548,"mrel_surplus_trea_with_cbr_pp": 0.0198,"subordination_ratio": 0.8504706734,"trea": 80108675910.0,"tem": 245981025000.0,"mrel_total_amount": 22127031770.0,"cet1_ratio": null,"total_capital_ratio": null,"leverage_ratio": null}],"comp": [{"lei": "2W8N8UU78PMDQKZENC08","name": "Intesa Sanpaolo S.p.A.","is_bpm": false,"cluster": "c1","cet1": 40854000000.0,"at1": 7650000000.0,"tier2": 9519000000.0,"subord_el": 9473000000.0,"senior_el": 48311000000.0,"total": 115807000000.0},{"lei": "549300TRUWO2CD2G5692","name": "UniCredit S.p.A.","is_bpm": false,"cluster": "c1","cet1": 43700000000.0,"at1": 4956000000.0,"tier2": 7648000000.0,"subord_el": 11221000000.0,"senior_el": 24757000000.0,"total": 92282000000.0},{"lei": "815600E4E6DCD2D25E30","name": "BANCO BPM SOCIETA' PER AZIONI","is_bpm": true,"cluster": "c1","cet1": 9351059998.0,"at1": 1389128259.0,"tier2": 2222715718.0,"subord_el": 3250000000.0,"senior_el": 6060907736.0,"total": 22273811711.0},{"lei": "J4CP7MHCXR8DAQMKIL78","name": "Banca Monte dei Paschi di Siena S.p.A.","is_bpm": false,"cluster": "c1","cet1": 9136218000.0,"at1": 0.0,"tier2": 1093791000.0,"subord_el": 530263000.0,"senior_el": 2863299000.0,"total": 13623571000.0},{"lei": "N747OI7JINV7RUUH6190","name": "BPER Banca S.p.A.","is_bpm": false,"cluster": "c1","cet1": 11882000000.0,"at1": 1865000000.0,"tier2": 1636000000.0,"subord_el": 1503000000.0,"senior_el": 5664000000.0,"total": 22550000000.0},{"lei": "PSNL19R2RXX5U3QWHI44","name": "Mediobanca - Banca di Credito Finanziario S.p.A.","is_bpm": false,"cluster": "c1","cet1": 7536395000.0,"at1": 0.0,"tier2": 1030337000.0,"subord_el": 1547520000.0,"senior_el": 9830551000.0,"total": 19944803000.0},{"lei": "635400AKJBGNS5WNQL34","name": "AIB Group plc","is_bpm": false,"cluster": "c2","cet1": 8943000000.0,"at1": 1309000000.0,"tier2": 1676000000.0,"subord_el": 7136000000.0,"senior_el": 0.0,"total": 19064000000.0},{"lei": "A5GWLFH3KM7YV2SFQL84","name": "Belfius Bank","is_bpm": false,"cluster": "c2","cet1": 11448532855.0,"at1": 496700000.0,"tier2": 1691926536.0,"subord_el": 2706711625.0,"senior_el": 6162257684.0,"total": 22506128700.0},{"lei": "SI5RG2M0WQQLZCXKRM20","name": "Banco de Sabadell, S.A.","is_bpm": false,"cluster": "c2","cet1": 10542779580.0,"at1": 2750000000.0,"tier2": 1310690590.0,"subord_el": 4213100000.0,"senior_el": 3310461600.0,"total": 22127031770.0}],"mat": [{"lei": "2W8N8UU78PMDQKZENC08","name": "Intesa Sanpaolo S.p.A.","is_bpm": false,"cluster": "c1","b1_2y": 17477000000.0,"b2_5y": 26899000000.0,"b5_10y": 24392000000.0,"b10y": 5956000000.0,"perp": 40216000000.0,"total": 114940000000.0,"s1_2y": 0.1520532452,"s2_5y": 0.2340264486,"s5_10y": 0.2122150687,"s10y": 0.05181834,"sperp": 0.3498868975},{"lei": "549300TRUWO2CD2G5692","name": "UniCredit S.p.A.","is_bpm": false,"cluster": "c1","b1_2y": 8104000000.0,"b2_5y": 13206000000.0,"b5_10y": 18704000000.0,"b10y": 1838000000.0,"perp": 54674000000.0,"total": 96527000000.0,"s1_2y": 0.0839557844,"s2_5y": 0.1368114621,"s5_10y": 0.1937696189,"s10y": 0.0190413045,"sperp": 0.5664114704},{"lei": "815600E4E6DCD2D25E30","name": "BANCO BPM SOCIETA' PER AZIONI","is_bpm": true,"cluster": "c1","b1_2y": 1770000000.0,"b2_5y": 6045000000.0,"b5_10y": 2430000000.0,"b10y": 1283000000.0,"perp": 14062000000.0,"total": 25589000000.0,"s1_2y": 0.0691703466,"s2_5y": 0.2362343194,"s5_10y": 0.0949626793,"s10y": 0.0501387315,"sperp": 0.5495330025},{"lei": "J4CP7MHCXR8DAQMKIL78","name": "Banca Monte dei Paschi di Siena S.p.A.","is_bpm": false,"cluster": "c1","b1_2y": 506056000.0,"b2_5y": 1705382000.0,"b5_10y": 2271453000.0,"b10y": 0.0,"perp": 7159668000.0,"total": 11642559000.0,"s1_2y": 0.0434660456,"s2_5y": 0.1464782785,"s5_10y": 0.1950991187,"s10y": 0.0,"sperp": 0.6149565572},{"lei": "N747OI7JINV7RUUH6190","name": "BPER Banca S.p.A.","is_bpm": false,"cluster": "c1","b1_2y": 1275000000.0,"b2_5y": 3753000000.0,"b5_10y": 2372000000.0,"b10y": 2542000000.0,"perp": 13630000000.0,"total": 23572000000.0,"s1_2y": 0.0540895978,"s2_5y": 0.1592143221,"s5_10y": 0.1006278636,"s10y": 0.1078398099,"sperp": 0.5782284066},{"lei": "PSNL19R2RXX5U3QWHI44","name": "Mediobanca - Banca di Credito Finanziario S.p.A.","is_bpm": false,"cluster": "c1","b1_2y": 3059560000.0,"b2_5y": 5985612000.0,"b5_10y": 3219100000.0,"b10y": 7018042000.0,"perp": 0.0,"total": 19282314000.0,"s1_2y": 0.1586718275,"s2_5y": 0.3104197971,"s5_10y": 0.1669457307,"s10y": 0.3639626447,"sperp": 0.0},{"lei": "635400AKJBGNS5WNQL34","name": "AIB Group plc","is_bpm": false,"cluster": "c2","b1_2y": 750000000.0,"b2_5y": 3351000000.0,"b5_10y": 4425000000.0,"b10y": 300000000.0,"perp": 11959000000.0,"total": 20785000000.0,"s1_2y": 0.0360837142,"s2_5y": 0.1612220351,"s5_10y": 0.2128939139,"s10y": 0.0144334857,"sperp": 0.5753668511},{"lei": "A5GWLFH3KM7YV2SFQL84","name": "Belfius Bank","is_bpm": false,"cluster": "c2","b1_2y": 1477612283.0,"b2_5y": 5231479477.0,"b5_10y": 3561180386.0,"b10y": 232541924.0,"perp": 10642992879.0,"total": 21145806949.0,"s1_2y": 0.0698773183,"s2_5y": 0.2474003234,"s5_10y": 0.1684107111,"s10y": 0.0109970702,"sperp": 0.503314577}],"crd": [{"lei": "2W8N8UU78PMDQKZENC08","name": "Intesa Sanpaolo S.p.A.","is_bpm": false,"cluster": "c1","ranks": {"1": 40216000000.0,"2": 16941000000.0,"3": 1013000000.0,"4": 8460000000.0,"5": 47645000000.0,"6": 665000000.0}},{"lei": "549300TRUWO2CD2G5692","name": "UniCredit S.p.A.","is_bpm": false,"cluster": "c1","ranks": {"1": 49723000000.0,"2": 11307000000.0,"4": 11221000000.0,"5": 24275000000.0}},{"lei": "815600E4E6DCD2D25E30","name": "BANCO BPM SOCIETA' PER AZIONI","is_bpm": true,"cluster": "c1","ranks": {"1": 12672000000.0,"2": 3606000000.0,"4": 3250000000.0,"5": 5780000000.0,"6": 281000000.0}},{"lei": "J4CP7MHCXR8DAQMKIL78","name": "Banca Monte dei Paschi di Siena S.p.A.","is_bpm": false,"cluster": "c1","ranks": {"1": 7159668000.0,"2": 1619593000.0,"5": 2863299000.0}},{"lei": "N747OI7JINV7RUUH6190","name": "BPER Banca S.p.A.","is_bpm": false,"cluster": "c1","ranks": {"1": 13630000000.0,"2": 2775000000.0,"4": 1503000000.0,"5": 4430000000.0,"6": 1233000000.0}},{"lei": "PSNL19R2RXX5U3QWHI44","name": "Mediobanca - Banca di Credito Finanziario S.p.A.","is_bpm": false,"cluster": "c1","ranks": {"1": 7018042000.0,"2": 904101000.0,"4": 1529620000.0,"5": 9830551000.0}},{"lei": "635400AKJBGNS5WNQL34","name": "AIB Group plc","is_bpm": false,"cluster": "c2","ranks": {"1": 10634000000.0,"2": 3011000000.0,"3": 7140000000.0}},{"lei": "A5GWLFH3KM7YV2SFQL84","name": "Belfius Bank","is_bpm": false,"cluster": "c2","ranks": {"1": 10030722600.0,"3": 1720115041.0,"5": 2736011625.0,"6": 6162257683.0}}],"cluster1_leis": ["2W8N8UU78PMDQKZENC08","549300TRUWO2CD2G5692","815600E4E6DCD2D25E30","J4CP7MHCXR8DAQMKIL78","LOO0AWXR8GF142JCO404","N747OI7JINV7RUUH6190","NNVPP80YIZGEY2314M97","PSNL19R2RXX5U3QWHI44"],"cluster2_leis": ["635400AKJBGNS5WNQL34","635400C8EK6DRI12LJ39","A5GWLFH3KM7YV2SFQL84","SI5RG2M0WQQLZCXKRM20"],"bpm_lei": "815600E4E6DCD2D25E30","universe": [{"lei": "259400DZXF7UJKK2AY35","name": "mBank S.A.","country": "Poland","trea_bn": 29.68,"mrel_pct_trea": 0.2484,"is_bpm": false,"is_peer": false,"cluster": "other"},{"lei": "259400LGXW3K0GDAG361","name": "Santander Bank Polska S.A.","country": "Poland","trea_bn": 35.27,"mrel_pct_trea": 0.2735,"is_bpm": false,"is_peer": false,"cluster": "other"},{"lei": "259400QHDOZWMJ103294","name": "ALIOR BANK S.A.","country": "Poland","trea_bn": 14.13,"mrel_pct_trea": 0.2143,"is_bpm": false,"is_peer": false,"cluster": "other"},{"lei": "2W8N8UU78PMDQKZENC08","name": "Intesa Sanpaolo S.p.A.","country": "Italy","trea_bn": 310.2,"mrel_pct_trea": 0.3728,"is_bpm": false,"is_peer": true,"cluster": "c1"},{"lei": "5493000LKS7B3UTF7H35","name": "Bank Polska Kasa Opieki S.A.","country": "Poland","trea_bn": 41.87,"mrel_pct_trea": 0.2385,"is_bpm": false,"is_peer": false,"cluster": "other"},{"lei": "5493006QMFDDMYWIAM13","name": "Banco Santander, S.A.","country": "Spain","trea_bn": 425.53,"mrel_pct_trea": 0.3973,"is_bpm": false,"is_peer": false,"cluster": "other"},{"lei": "549300C6TUMDXNOVXS82","name": "L\u00e4nsf\u00f6rs\u00e4kringar Bank AB - gruppen","country": "Sweden","trea_bn": 12.99,"mrel_pct_trea": 0.4955,"is_bpm": false,"is_peer": false,"cluster": "other"},{"lei": "549300GKFG0RYRRQ1414","name": "DNB BANK ASA","country": "Norway","trea_bn": 84.94,"mrel_pct_trea": 0.4091,"is_bpm": false,"is_peer": false,"cluster": "other"},{"lei": "549300Q3OIWRHQUQM052","name": "SpareBank 1 S\u00f8r-Norge","country": "Norway","trea_bn": 15.86,"mrel_pct_trea": 0.6629,"is_bpm": false,"is_peer": false,"cluster": "other"},{"lei": "549300TRUWO2CD2G5692","name": "UniCredit S.p.A.","country": "Italy","trea_bn": 296.33,"mrel_pct_trea": 0.3059,"is_bpm": false,"is_peer": true,"cluster": "c1"},{"lei": "635400AKJBGNS5WNQL34","name": "AIB Group plc","country": "Ireland","trea_bn": 54.18,"mrel_pct_trea": 0.3518,"is_bpm": false,"is_peer": true,"cluster": "c2"},{"lei": "724500A1FNICHSDF2I11","name": "ASN Bank N.V.","country": "Netherlands","trea_bn": 18.26,"mrel_pct_trea": 0.4079,"is_bpm": false,"is_peer": false,"cluster": "other"},{"lei": "7CUNS533WID6K7DGFI87","name": "CaixaBank, S.A.","country": "Spain","trea_bn": 244.46,"mrel_pct_trea": 0.274,"is_bpm": false,"is_peer": false,"cluster": "other"},{"lei": "7LVZJ6XRIE7VNZ4UBX81","name": "BANCA MEDIOLANUM S.P.A.","country": "Italy","trea_bn": 16.68,"mrel_pct_trea": 0.2492,"is_bpm": false,"is_peer": false,"cluster": "other"},{"lei": "815600E4E6DCD2D25E30","name": "BANCO BPM SOCIETA\u2019 PER AZIONI","country": "Italy","trea_bn": 65.28,"mrel_pct_trea": 0.3402,"is_bpm": true,"is_peer": false,"cluster": "bpm"},{"lei": "A5GWLFH3KM7YV2SFQL84","name": "Belfius Bank","country": "Belgium","trea_bn": 72.15,"mrel_pct_trea": 0.3119,"is_bpm": false,"is_peer": true,"cluster": "c2"},{"lei": "BFXS5XCH7N0Y05NIXW11","name": "ABN AMRO Bank N.V.","country": "Netherlands","trea_bn": 135.4,"mrel_pct_trea": 0.3477,"is_bpm": false,"is_peer": false,"cluster": "other"},{"lei": "DG3RU1DBUFHT4ZF9WN62","name": "Co\u00f6peratieve Rabobank U.A.","country": "Netherlands","trea_bn": 239.22,"mrel_pct_trea": 0.3496,"is_bpm": false,"is_peer": false,"cluster": "other"},{"lei": "J4CP7MHCXR8DAQMKIL78","name": "Banca Monte dei Paschi di Siena S.p.A.","country": "Italy","trea_bn": 46.27,"mrel_pct_trea": 0.2944,"is_bpm": false,"is_peer": true,"cluster": "c1"},{"lei": "O2RNE8IBXP4R0TD8PU41","name": "Soci\u00e9t\u00e9 G\u00e9n\u00e9rale S.A.","country": "France","trea_bn": 393.13,"mrel_pct_trea": 0.3252,"is_bpm": false,"is_peer": false,"cluster": "other"},{"lei": "P4GTT6GF1W40CVIMFR43","name": "Powszechna Kasa Oszczednosci Bank Polski S.A.","country": "Poland","trea_bn": 68.13,"mrel_pct_trea": 0.2338,"is_bpm": false,"is_peer": false,"cluster": "other"},{"lei": "PSNL19R2RXX5U3QWHI44","name": "Mediobanca - Banca di Credito Finanziario S.p.A.","country": "Italy","trea_bn": 45.87,"mrel_pct_trea": 0.4304,"is_bpm": false,"is_peer": true,"cluster": "c1"},{"lei": "R0MUWSFPU8MPRO8K5P83","name": "BNP Paribas","country": "France","trea_bn": 788.85,"mrel_pct_trea": 0.2896,"is_bpm": false,"is_peer": false,"cluster": "other"},{"lei": "SI5RG2M0WQQLZCXKRM20","name": "Banco de Sabadell, S.A.","country": "Spain","trea_bn": 80.11,"mrel_pct_trea": 0.2762,"is_bpm": false,"is_peer": true,"cluster": "c2"},{"lei": "U48ZC55EFS0K6YKA1212","name": "Banco Bilbao Vizcaya Argentaria, S.A.","country": "Spain","trea_bn": 205.15,"mrel_pct_trea": 0.2889,"is_bpm": false,"is_peer": false,"cluster": "other"},{"lei": "R0MUWSFPU8MPRO8K5P83","name": "Cr\u00e9dit Agricole S.A.","country": "France","trea_bn": 662.7,"mrel_pct_trea": 0.3179,"is_bpm": false,"is_peer": false,"cluster": "other"},{"lei": "N747OI7JINV7RUUH6190","name": "BPER Banca S.p.A.","country": "Italy","trea_bn": 80.1,"mrel_pct_trea": 0.2735,"is_bpm": false,"is_peer": true,"cluster": "c1"},{"lei": "529900ODI3047E2LIV03","name": "Nordea Bank Abp","country": "Finland","trea_bn": 159.7,"mrel_pct_trea": 0.366,"is_bpm": false,"is_peer": false,"cluster": "other"},{"lei": "3TK20IVIUJ8J3ZU0QE75","name": "ING Bank N.V.","country": "Netherlands","trea_bn": 340.2,"mrel_pct_trea": 0.3189,"is_bpm": false,"is_peer": false,"cluster": "other"},{"lei": "MAES062Z21O4RZ2U7M96","name": "Danske Bank A/S","country": "Denmark","trea_bn": 90.2,"mrel_pct_trea": 0.4215,"is_bpm": false,"is_peer": false,"cluster": "other"},{"lei": "213800X3Q9LSAKRUWY91","name": "KBC Group","country": "Belgium","trea_bn": 127.6,"mrel_pct_trea": 0.3143,"is_bpm": false,"is_peer": false,"cluster": "other"}]};
+</script>
+<script>
+// ─── THEME ──────────────────────────────────────────────────────────────────
+const NAVY="#0b2545",NAVY_DEEP="#061629",STEEL="#4a6a8a",MIST="#e6ecf2";
+const AMBER="#e6a817",AMBER_SOFT="#f3c96a",RED="#c0362c";
+const GREY400="#9aa4b1",GREY600="#5b6572",GREY200="#d5dae0",WHITE="#ffffff";
+const BPM_COLOR=RED, PEER_COLOR=STEEL, REQ_COLOR=AMBER;
+const FONT="Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif";
+
+const LAYOUT_BASE={
+  paper_bgcolor:WHITE, plot_bgcolor:WHITE,
+  font:{family:FONT,color:"#1f2937",size:12},
+  title:{font:{family:FONT,color:NAVY,size:15},x:0},
+  hoverlabel:{bgcolor:NAVY,bordercolor:NAVY,font:{family:FONT,color:WHITE,size:12}},
+  xaxis:{gridcolor:GREY200,zerolinecolor:GREY200},
+  yaxis:{gridcolor:GREY200,zerolinecolor:GREY200},
+  margin:{l:220,r:24,t:90,b:40},
+};
+
+// ─── PEER FILTER ──────────────────────────────────────────────────────────
+function activeLeis(){
+  const v=document.getElementById("peer-set").value;
+  if(v==="c1") return new Set(DATA.cluster1_leis);
+  if(v==="c2") return new Set(DATA.cluster2_leis);
+  return new Set([...DATA.cluster1_leis,...DATA.cluster2_leis]);
+}
+
+function filterKM2(){
+  const leis=activeLeis();
+  return DATA.km2.filter(d=>leis.has(d.lei));
+}
+
+// ─── HELPERS ────────────────────────────────────────────────────────────
+function fmt(v,u){
+  if(v===null||v===undefined||isNaN(v)) return "—";
+  if(u==="%") return (v*100).toFixed(2)+"%";
+  if(u==="pp") return (v>0?"+":"")+(v*100).toFixed(2)+" pp";
+  if(u==="€bn") return "€"+(v/1e9).toFixed(1)+"bn";
+  return v;
+}
+function plotlyConfig(){return{displayModeBar:false};}
+
+// ─── NAVIGATION ─────────────────────────────────────────────────────────
+const PAGE_FILTER_MAP={universe:"filters-universe",cushion:"filters-cushion",composition:"filters-composition",maturity:"filters-maturity",creditor:"filters-creditor"};
+
+function showPage(id,btn){
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.querySelectorAll(".nav-link").forEach(b=>b.classList.remove("active"));
+  document.getElementById("page-"+id).classList.add("active");
+  btn.classList.add("active");
+  // Show only the relevant sidebar filter panel
+  Object.entries(PAGE_FILTER_MAP).forEach(([page,filterId])=>{
+    const el=document.getElementById(filterId);
+    if(el) el.style.display=(page===id)?"block":"none";
+  });
+  // lazy render
+  if(id==="universe") renderUniverse();
+  if(id==="cushion") renderCushion();
+  if(id==="composition") renderComposition();
+  if(id==="maturity") renderMaturity();
+  if(id==="creditor") renderCreditor();
+}
+
+function refreshAll(){
+  renderUniverse();
+  renderCushion();
+  renderComposition();
+  renderMaturity();
+  renderCreditor();
+  buildBadges();
+}
+
+// ─── META LINE ──────────────────────────────────────────────────────────
+document.getElementById("meta-line").textContent=
+  DATA.km2.length+" banks · Ref: 31-12-2025";
+
+// ─── UNIVERSE PAGE ───────────────────────────────────────────────────────
+function renderUniverse(){
+  const highlightMode=document.querySelector("input[name=univ-highlight]:checked").value;
+  const rows=DATA.universe;
+  if(!rows||!rows.length){Plotly.purge("universe-chart");return;}
+
+  // Split into groups for layered rendering (others → peers C2 → peers C1 → BPM)
+  const others=rows.filter(d=>!d.is_bpm&&!d.is_peer);
+  const peersC2=rows.filter(d=>d.is_peer&&d.cluster==="c2");
+  const peersC1=rows.filter(d=>d.is_peer&&d.cluster==="c1");
+  const bpm=rows.filter(d=>d.is_bpm);
+
+  function hoverText(d){
+    const name=d.name.length>40?d.name.substring(0,38)+"…":d.name;
+    return `<b>${name}</b><br>Country: ${d.country}<br>TREA: €${d.trea_bn.toFixed(1)}bn<br>MREL/TREA: ${(d.mrel_pct_trea*100).toFixed(2)}%`;
+  }
+
+  // Percentile annotation lines (universe median)
+  const mrelVals=rows.map(d=>d.mrel_pct_trea).sort((a,b)=>a-b);
+  const univMedian=mrelVals[Math.floor(mrelVals.length/2)];
+
+  const traces=[];
+
+  // --- Others (grey) ---
+  traces.push({
+    type:"scatter",mode:"markers",name:"EU universe (other)",
+    x:others.map(d=>d.trea_bn),y:others.map(d=>d.mrel_pct_trea*100),
+    marker:{size:7,color:GREY400,opacity:0.55,line:{width:0}},
+    text:others.map(hoverText),hovertemplate:"%{text}<extra></extra>",
+  });
+
+  // --- Peer Cluster 2 (steel blue) ---
+  traces.push({
+    type:"scatter",mode:"markers+text",name:"Cluster 2 — EU peer",
+    x:peersC2.map(d=>d.trea_bn),y:peersC2.map(d=>d.mrel_pct_trea*100),
+    marker:{size:11,color:STEEL,opacity:0.9,
+      line:{width:1.2,color:NAVY},symbol:"circle"},
+    text:peersC2.map(d=>{
+      const short=d.name.replace("Banco de Sabadell, S.A.","Sabadell")
+                        .replace("AIB Group plc","AIB")
+                        .replace("Belfius Bank","Belfius");
+      return short;
+    }),
+    textposition:peersC2.map(d=>{
+      if(d.name.includes("Sabadell")) return "top right";
+      if(d.name.includes("AIB")) return "top left";
+      return "top center";
+    }),
+    textfont:{color:STEEL,size:10},
+    customdata:peersC2.map(hoverText),
+    hovertemplate:"%{customdata}<extra></extra>",
+  });
+
+  // --- Peer Cluster 1 (navy) ---
+  traces.push({
+    type:"scatter",mode:"markers+text",name:"Cluster 1 — ITA peer",
+    x:peersC1.map(d=>d.trea_bn),y:peersC1.map(d=>d.mrel_pct_trea*100),
+    marker:{size:11,color:NAVY,opacity:0.9,
+      line:{width:1.2,color:NAVY},symbol:"circle"},
+    text:peersC1.map(d=>{
+      return d.name.replace("Intesa Sanpaolo S.p.A.","Intesa")
+                   .replace("UniCredit S.p.A.","UniCredit")
+                   .replace("Banca Monte dei Paschi di Siena S.p.A.","MPS")
+                   .replace("Mediobanca - Banca di Credito Finanziario S.p.A.","Mediobanca");
+    }),
+    textposition:peersC1.map(d=>{
+      if(d.name.includes("Intesa")) return "top right";
+      if(d.name.includes("UniCredit")) return "bottom left";
+      if(d.name.includes("Mediobanca")) return "top left";
+      return "top center";
+    }),
+    textfont:{color:NAVY,size:10},
+    customdata:peersC1.map(hoverText),
+    hovertemplate:"%{customdata}<extra></extra>",
+  });
+
+  // --- BPM (red diamond) ---
+  if(bpm.length){
+    const b=bpm[0];
+    traces.push({
+      type:"scatter",mode:"markers+text",name:"Banco BPM",
+      x:[b.trea_bn],y:[b.mrel_pct_trea*100],
+      marker:{size:16,color:BPM_COLOR,symbol:"diamond",
+        line:{width:2,color:"white"}},
+      text:["BPM"],textposition:"middle right",
+      textfont:{color:BPM_COLOR,size:13,family:FONT},
+      customdata:[hoverText(b)],
+      hovertemplate:"%{customdata}<extra></extra>",
+    });
+  }
+
+  // Median reference line annotation
+  const shapes=[{
+    type:"line",xref:"paper",yref:"y",
+    x0:0,x1:1,y0:univMedian*100,y1:univMedian*100,
+    line:{color:AMBER,width:1.5,dash:"dot"},
+  }];
+  const annotations=[{
+    xref:"paper",yref:"y",x:1.01,y:univMedian*100,
+    text:`Median<br>${(univMedian*100).toFixed(1)}%`,
+    showarrow:false,font:{size:10,color:AMBER},
+    xanchor:"left",
+  }];
+
+  Plotly.react("universe-chart",traces,{
+    ...LAYOUT_BASE,
+    title:{text:"Own funds and eligible liabilities as % of TREA — 31-12-2025 (25 banks)",
+           font:{family:FONT,color:NAVY,size:14},x:0},
+    xaxis:{
+      title:"Total Risk Exposure Amount (TREA, €bn) — log scale",
+      type:"log",
+      tickformat:",.0f",
+      tickvals:[0.1,0.5,1,5,10,50,100,500,1000],
+      ticktext:["0.1","0.5","1","5","10","50","100","500","1000"],
+      gridcolor:GREY200,zerolinecolor:GREY200,
+    },
+    yaxis:{
+      title:"Own funds and eligible liabilities as % of TREA",
+      tickformat:".0%",
+      tickvals:[15,20,25,30,35,40,45,50,55,60,65,70],
+      ticktext:["15%","20%","25%","30%","35%","40%","45%","50%","55%","60%","65%","70%"],
+      gridcolor:GREY200,
+    },
+    margin:{l:80,r:80,t:90,b:60},
+    showlegend:true,
+    legend:{orientation:"h",y:1.16,x:0,xanchor:"left",yanchor:"bottom",
+            font:{size:11},bgcolor:"rgba(255,255,255,0.85)"},
+    shapes:shapes,
+    annotations:annotations,
+    height:520,
+  },plotlyConfig());
+}
+
+// ─── CUSHION PAGE ────────────────────────────────────────────────────────
+const CUSHION_SPECS={
+  mrel_ex:{cap:"mrel_pct_trea",req:"mrel_requirement_trea_ex_cbr",
+    title:"MREL % TREA — capacity vs MREL requirement (ex-CBR)",reqLbl:"Req ex-CBR"},
+  mrel_with:{cap:"mrel_pct_trea",req:"mrel_requirement_trea_with_cbr",
+    title:"MREL % TREA — capacity vs OCR threshold (MREL + CBR)",reqLbl:"OCR (MREL+CBR)"},
+  subord_ex:{cap:"subord_pct_trea",req:"mrel_subord_requirement_trea_ex_cbr",
+    title:"Subordination % TREA — capacity vs subord requirement (ex-CBR)",reqLbl:"Subord req ex-CBR"},
+  subord_with:{cap:"subord_pct_trea",req:"mrel_subord_requirement_trea_with_cbr",
+    title:"Subordination % TREA — capacity vs subord req + CBR",reqLbl:"Subord req+CBR"},
+  tem:{cap:"mrel_pct_tem",req:"mrel_requirement_tem",
+    title:"MREL % TEM — capacity vs TEM requirement",reqLbl:"Req TEM"},
+  subord_ratio:{cap:"subordination_ratio",req:null,
+    title:"Subordination ratio — subordinated share of total MREL stack",reqLbl:null},
+};
+
+function renderCushion(){
+  const metric=document.getElementById("cushion-metric").value;
+  const spec=CUSHION_SPECS[metric];
+  const rows=filterKM2().filter(d=>d[spec.cap]!==null).sort((a,b)=>a[spec.cap]-b[spec.cap]);
+  if(!rows.length){Plotly.purge("cushion-chart");return;}
+
+  const labels=rows.map(d=>d.name);
+  const caps=rows.map(d=>d[spec.cap]);
+  const reqs=spec.req?rows.map(d=>d[spec.req]):null;
+  const colors=rows.map(d=>d.is_bpm?BPM_COLOR:PEER_COLOR);
+
+  const hover=rows.map((d,i)=>{
+    const c=caps[i], r=reqs?reqs[i]:null;
+    let h=`<b>${d.name}</b><br>Capacity: ${fmt(c,"%")}`;
+    if(r!==null&&r!==undefined) h+=`<br>${spec.reqLbl}: ${fmt(r,"%")}<br>Surplus: ${fmt(c-r,"pp")}`;
+    return h;
+  });
+
+  const traces=[{
+    type:"bar",orientation:"h",y:labels,x:caps,
+    marker:{color:colors},name:"Capacity",
+    hovertext:hover,hoverinfo:"text",hoverlabel:{namelength:-1},
+  }];
+
+  if(reqs){
+    const rFilt=reqs.map((r,i)=>r!==null?r:null);
+    traces.push({
+      type:"scatter",mode:"markers",orientation:"h",
+      y:labels.filter((_,i)=>rFilt[i]!==null),
+      x:rFilt.filter(r=>r!==null),
+      marker:{symbol:"line-ns",size:18,color:AMBER,line:{color:AMBER,width:3}},
+      name:spec.reqLbl,hovertemplate:spec.reqLbl+": %{x:.2%}<extra></extra>",
+    });
+  }
+
+  const h=Math.max(380,22*rows.length+140);
+  Plotly.react("cushion-chart",traces,{
+    ...LAYOUT_BASE,
+    title:{text:spec.title,font:{family:FONT,color:NAVY,size:14},x:0},
+    xaxis:{...LAYOUT_BASE.xaxis,tickformat:".0%",title:""},
+    yaxis:{automargin:true},
+    showlegend:true,legend:{orientation:"h",y:1.18,x:1,xanchor:"right",yanchor:"bottom",bgcolor:"rgba(255,255,255,0.85)"},
+    height:h,
+  },plotlyConfig());
+  document.getElementById("cushion-chart-title").textContent="";
+  buildBadges();
+}
+
+// ─── BADGES ──────────────────────────────────────────────────────────────
+function buildBadges(){
+  const rows=filterKM2();
+  const bpm=rows.find(d=>d.is_bpm);
+  const peers=rows.filter(d=>!d.is_bpm);
+  if(!bpm){document.getElementById("cushion-badges").innerHTML="";return;}
+
+  const med_mrel=median(peers.map(d=>d.mrel_pct_trea).filter(v=>v!==null));
+  const med_subord=median(peers.map(d=>d.subord_pct_trea).filter(v=>v!==null));
+
+  const badges=[
+    {lbl:"BPM MREL % TREA",val:fmt(bpm.mrel_pct_trea,"%"),sub:"capacity",cls:"bpm"},
+    {lbl:"Cushion vs MREL (ex-CBR)",val:fmt(bpm.mrel_surplus_trea_ex_cbr_pp,"pp"),sub:"vs "+fmt(bpm.mrel_requirement_trea_ex_cbr,"%")+" req",cls:"bpm"},
+    {lbl:"Cushion vs OCR (with-CBR)",val:fmt(bpm.mrel_surplus_trea_with_cbr_pp,"pp"),sub:"M-MDA breach se < 0",cls:"bpm"},
+    {lbl:"BPM Subord % TREA",val:fmt(bpm.subord_pct_trea,"%"),sub:"vs peer median "+fmt(med_subord,"%"),cls:"bpm"},
+    {lbl:"Peer median MREL % TREA",val:fmt(med_mrel,"%"),sub:"n="+peers.filter(d=>d.mrel_pct_trea!==null).length+" banche",cls:""},
+    {lbl:"BPM MREL % TEM",val:fmt(bpm.mrel_pct_tem,"%"),sub:"capacity su TEM",cls:"bpm"},
+  ];
+  document.getElementById("cushion-badges").innerHTML=badges.map(b=>`
+    <div class="badge ${b.cls}">
+      <div class="b-label">${b.lbl}</div>
+      <div class="b-value">${b.val}</div>
+      <div class="b-sub">${b.sub}</div>
+    </div>`).join("");
+}
+
+function median(arr){
+  if(!arr.length) return null;
+  const s=[...arr].sort((a,b)=>a-b);
+  const m=Math.floor(s.length/2);
+  return s.length%2?s[m]:(s[m-1]+s[m])/2;
+}
+
+// ─── COMPOSITION PAGE ────────────────────────────────────────────────────
+const COMP_COLORS={"CET1":"#0b2545","AT1":"#2a4d7a","T2":"#4a6a8a","Subord EL":"#e6a817","Senior EL":"#f3c96a"};
+const COMP_CLASSES=[
+  {key:"cet1",label:"CET1"},
+  {key:"at1",label:"AT1"},
+  {key:"tier2",label:"T2"},
+  {key:"subord_el",label:"Subord EL"},
+  {key:"senior_el",label:"Senior EL"},
+];
+
+function renderComposition(){
+  const leis=activeLeis();
+  const mode=document.querySelector("input[name=comp-mode]:checked").value;
+  const sortKey=document.getElementById("comp-sort").value;
+  let rows=DATA.comp.filter(d=>leis.has(d.lei));
+  if(!rows.length){Plotly.purge("comp-chart");return;}
+
+  rows=rows.map(d=>{
+    const own=(d.cet1||0)+(d.at1||0)+(d.tier2||0);
+    const subord=own+(d.subord_el||0);
+    return{...d,
+      own_funds_share:d.total?own/d.total:0,
+      subord_share:d.total?subord/d.total:0,
+      senior_share:d.total?(d.senior_el||0)/d.total:0};
+  });
+
+  if(sortKey==="name") rows.sort((a,b)=>b.name.localeCompare(a.name));
+  else if(sortKey==="total") rows.sort((a,b)=>a.total-b.total);
+  else rows.sort((a,b)=>a[sortKey]-b[sortKey]);
+
+  const labels=rows.map(d=>d.name);
+  const totals=rows.map(d=>d.total||1);
+  const traces=COMP_CLASSES.map(cls=>{
+    const vals=rows.map(d=>d[cls.key]||0);
+    const xs=mode==="pct"?vals.map((v,i)=>v/totals[i]):vals.map(v=>v/1e9);
+    const hover=rows.map((d,i)=>{
+      const v=vals[i],t=totals[i];
+      return mode==="pct"
+        ?`<b>${d.name}</b><br>${cls.label}: ${(v/t*100).toFixed(1)}% (€${(v/1e9).toFixed(2)}bn)`
+        :`<b>${d.name}</b><br>${cls.label}: €${(v/1e9).toFixed(2)}bn (${(v/t*100).toFixed(1)}%)`;
+    });
+    return{type:"bar",orientation:"h",y:labels,x:xs,name:cls.label,
+      marker:{color:COMP_COLORS[cls.label]},hovertext:hover,hoverinfo:"text"};
+  });
+
+  Plotly.react("comp-chart",traces,{
+    ...LAYOUT_BASE,barmode:"stack",
+    title:{text:"MREL stack composition — 31-12-2025",font:{family:FONT,color:NAVY,size:14},x:0},
+    xaxis:{...LAYOUT_BASE.xaxis,
+      title:mode==="pct"?"Share of MREL stack":"MREL stack (€bn)",
+      tickformat:mode==="pct"?".0%":".1f",
+      range:mode==="pct"?[0,1]:undefined},
+    yaxis:{automargin:true},
+    showlegend:true,
+    legend:{orientation:"h",y:1.18,x:1,xanchor:"right",yanchor:"bottom",bgcolor:"rgba(255,255,255,0.85)"},
+    height:Math.max(380,26*rows.length+170),
+  },plotlyConfig());
+}
+
+// ─── MATURITY PAGE ────────────────────────────────────────────────────────
+const BUCKET_KEYS=["s1_2y","s2_5y","s5_10y","s10y","sperp"];
+const BUCKET_LBLS=["1–2y","2–5y","5–10y","10y+","Perpetual"];
+const BUCKET_AMT =["b1_2y","b2_5y","b5_10y","b10y","perp"];
+
+function renderMaturity(){
+  const leis=activeLeis();
+  const sortKey=document.getElementById("mat-sort").value;
+  let rows=DATA.mat.filter(d=>leis.has(d.lei));
+  if(!rows.length){Plotly.purge("mat-chart");return;}
+
+  if(sortKey==="name") rows.sort((a,b)=>b.name.localeCompare(a.name));
+  else if(sortKey==="total") rows.sort((a,b)=>a.total-b.total);
+  else rows.sort((a,b)=>(a[sortKey]||0)-(b[sortKey]||0));
+
+  const labels=rows.map(d=>d.name);
+  const matrix=rows.map(d=>BUCKET_KEYS.map(k=>d[k]||0));
+  const matrixT=BUCKET_KEYS.map((_,j)=>rows.map((_,i)=>matrix[i][j]));
+
+  const hover=rows.map((d,i)=>BUCKET_KEYS.map((k,j)=>{
+    const s=(d[k]||0)*100,a=(d[BUCKET_AMT[j]]||0)/1e9;
+    return `<b>${d.name}</b><br>${BUCKET_LBLS[j]}: ${s.toFixed(1)}% (€${a.toFixed(2)}bn)`;
+  }));
+  const hoverT=BUCKET_KEYS.map((_,j)=>rows.map((_,i)=>hover[i][j]));
+
+  const trace={
+    type:"heatmap",
+    z:matrixT,
+    x:labels,
+    y:BUCKET_LBLS,
+    colorscale:[[0,"#eef3f7"],[0.15,"#b9c7d7"],[0.35,"#7e96b1"],[0.6,"#3f5a7a"],[0.85,"#1c2f4a"],[1,"#0b2545"]],
+    zmin:0,zmax:1,
+    colorbar:{tickformat:".0%",title:{text:"Share"}},
+    hovertext:hoverT,hoverinfo:"text",
+    transpose:false,
+  };
+
+  // Reformat as rows=banks, cols=buckets (Plotly heatmap: z[i][j] = row i col j)
+  const z=rows.map(d=>BUCKET_KEYS.map(k=>d[k]||0));
+  const hoverXY=rows.map((d,i)=>BUCKET_KEYS.map((k,j)=>{
+    const s=(d[k]||0)*100,a=(d[BUCKET_AMT[j]]||0)/1e9;
+    return `<b>${d.name}</b><br>${BUCKET_LBLS[j]}: ${s.toFixed(1)}% (€${a.toFixed(2)}bn)`;
+  }));
+
+  const traceH={
+    type:"heatmap",
+    z:z, x:BUCKET_LBLS, y:labels,
+    colorscale:[[0,"#eef3f7"],[0.15,"#b9c7d7"],[0.35,"#7e96b1"],[0.6,"#3f5a7a"],[0.85,"#1c2f4a"],[1,"#0b2545"]],
+    zmin:0,zmax:1,
+    colorbar:{tickformat:".0%",title:{text:"Share"}},
+    hovertext:hoverXY,hoverinfo:"text",
+  };
+
+  // BPM marker
+  const bpmRow=rows.find(d=>d.is_bpm);
+  const extraTraces=[];
+  if(bpmRow){
+    extraTraces.push({
+      type:"scatter",mode:"markers+text",
+      x:[BUCKET_LBLS[BUCKET_LBLS.length-1]],y:[bpmRow.name],
+      marker:{size:12,color:RED,symbol:"diamond"},
+      text:["BPM"],textposition:"middle right",
+      textfont:{color:RED,size:11},hoverinfo:"skip",showlegend:false,
+    });
+  }
+
+  Plotly.react("mat-chart",[traceH,...extraTraces],{
+    ...LAYOUT_BASE,
+    title:{text:"Maturity profile — 31-12-2025",font:{family:FONT,color:NAVY,size:14},x:0},
+    xaxis:{title:"Residual maturity bucket",side:"top",gridcolor:GREY200},
+    yaxis:{automargin:true,gridcolor:GREY200},
+    margin:{l:240,r:60,t:80,b:40},
+    height:Math.max(420,28*rows.length+160),showlegend:false,
+  },plotlyConfig());
+}
+
+// ─── CREDITOR RANK PAGE ──────────────────────────────────────────────────
+const RANK_COLORS_MAP={
+  1:"#7d96b0",2:"#627e9a",3:"#4a6a8a",4:"#3e5772",
+  5:"#d8a946",6:"#e6a817",7:"#d69516",8:"#c0362c",9:"#a82f26",10:"#8b271f"
+};
+function rankColor(r){return RANK_COLORS_MAP[r]||"#7a7a7a";}
+
+function renderCreditor(){
+  const leis=activeLeis();
+  const mode=document.getElementById("crd-mode").value;
+  const sortKey=document.getElementById("crd-sort").value;
+  let rows=DATA.crd.filter(d=>leis.has(d.lei));
+  if(!rows.length){Plotly.purge("crd-chart");return;}
+
+  rows=rows.map(d=>{
+    const total=Object.values(d.ranks).reduce((s,v)=>s+(v||0),0)||1;
+    const r1=d.ranks[1]||0;
+    const subord=(d.ranks[4]||0)+(d.ranks[5]||0)+(d.ranks[6]||0)+(d.ranks[7]||0)+(d.ranks[8]||0)+(d.ranks[9]||0)+(d.ranks[10]||0);
+    return{...d,total,r1_share:r1/total,subord_share:subord/total};
+  });
+
+  if(sortKey==="name") rows.sort((a,b)=>b.name.localeCompare(a.name));
+  else if(sortKey==="total_desc") rows.sort((a,b)=>a.total-b.total);
+  else if(sortKey==="senior") rows.sort((a,b)=>a.r1_share-b.r1_share);
+  else if(sortKey==="subord") rows.sort((a,b)=>a.subord_share-b.subord_share);
+
+  const allRanks=[...new Set(rows.flatMap(d=>Object.keys(d.ranks).map(Number)))].sort((a,b)=>a-b);
+  const labels=rows.map(d=>d.name);
+
+  const traces=allRanks.map(rank=>{
+    const vals=rows.map(d=>d.ranks[rank]||0);
+    const totals=rows.map(d=>d.total);
+    const xs=mode==="pct"?vals.map((v,i)=>v/totals[i]):vals.map(v=>v/1e9);
+    const hover=rows.map((d,i)=>{
+      const v=vals[i],t=totals[i];
+      return mode==="pct"
+        ?`<b>${d.name}</b><br>Rank ${rank}: ${(v/t*100).toFixed(1)}% (€${(v/1e9).toFixed(2)}bn)`
+        :`<b>${d.name}</b><br>Rank ${rank}: €${(v/1e9).toFixed(2)}bn (${(v/t*100).toFixed(1)}%)`;
+    });
+    return{type:"bar",orientation:"h",y:labels,x:xs,name:`Rank ${rank}`,
+      marker:{color:rankColor(rank)},hovertext:hover,hoverinfo:"text"};
+  });
+
+  Plotly.react("crd-chart",traces,{
+    ...LAYOUT_BASE,barmode:"stack",
+    title:{text:"Creditor ranking — MREL stack by insolvency rank (31-12-2025)",font:{family:FONT,color:NAVY,size:14},x:0},
+    xaxis:{...LAYOUT_BASE.xaxis,
+      title:mode==="pct"?"Share of MREL stack":"MREL stack (€bn)",
+      tickformat:mode==="pct"?".0%":".1f",
+      range:mode==="pct"?[0,1]:undefined},
+    yaxis:{automargin:true},
+    showlegend:true,
+    legend:{orientation:"h",y:1.18,x:1,xanchor:"right",yanchor:"bottom",bgcolor:"rgba(255,255,255,0.85)"},
+    height:Math.max(380,26*rows.length+140),
+  },plotlyConfig());
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────
+renderUniverse();
+renderCushion();
+renderComposition();
+</script>
+</body>
+</html>
